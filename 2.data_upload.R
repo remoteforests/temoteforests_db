@@ -1,0 +1,226 @@
+# setup -------------------------------------------------------------------
+
+library(pool); library(tidyverse); library(zoo)
+
+source("pw.R")
+source("0.functions.R")
+
+data.list <- list()
+
+# STRUCTURAL DATA ---------------------------------------------------------
+
+setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2018/clean")
+
+# 1. reading --------------------------------------------------------------
+
+data.list$plot <- read_data("plot")
+data.list$tree <- read_data("tree")
+data.list$mortality < read_data("mortality")
+data.list$microsites <- read_data("microsites")
+data.list$quality <- read_data("quality")
+data.list$deadwood <- read_data("deadwood")
+data.list$regeneration <- read_data("regeneration")
+data.list$regeneration_subplot <- read_data("regeneration_subplot")
+
+# 2. preparing & uploading ------------------------------------------------
+
+## plot
+
+data.list$plot <- prepare_data("plot")
+
+upload_data("plot")
+
+## plot_id
+
+data.list$tree <- prepare_data("tree")
+data.list$deadwood <- prepare_data("deadwood")
+data.list$regeneration <- prepare_data("regeneration")
+data.list$regeneration_subplot <- prepare_data("regeneration_subplot")
+
+upload_data(x = c("tree", "deadwood", "regeneration", "regeneration_subplot"))
+
+## tree_id
+
+data.list$mortality <- prepare_data("mortality")
+data.list$microsites <- prepare_data("microsites")
+data.list$quality <- prepare_data("quality")
+
+upload_data(x = c("mortality", "microsites", "quality"))
+
+# DENDROCHRONOLOGICAL DATA ------------------------------------------------
+
+setwd("C:/Users/Ondrej_Vostarek/Downloads")
+
+# 1. reading --------------------------------------------------------------
+
+data.list$core <- read_data("core")
+data.list$ring <- read_data("ring")
+
+# 2. preparing & uploading ------------------------------------------------
+
+## tree_id
+
+data.list$core <- prepare_data("core")
+
+upload_data("core")
+
+## core_id
+
+data.list$ring <- prepare_data("ring")
+
+upload_data("ring")
+
+# DISTURBANCE DATA --------------------------------------------------------
+
+# 1. reading --------------------------------------------------------------
+
+data.list$dist_tree <- data.release$event
+data.list$dist_plot <- data.mds
+data.list$dist_plot_event <- data.peaks
+
+# 2. preparing & uploading ------------------------------------------------
+
+## dist_tree
+
+data.list$dist_tree <- prepare_data("dist_tree")
+
+upload_data("dist_tree")
+
+## plot_id
+
+data.list$dist_plot <- prepare_data("dist_plot")
+
+upload_data("dist_plot")
+
+## event_id
+
+data.list$dist_plot_event <- prepare_data("dist_plot_event")
+
+upload_data("dist_plot_event")
+
+# PARAMETERS --------------------------------------------------------------
+
+# 1. reading --------------------------------------------------------------
+
+data.list$parameters_plot <- final_table
+
+# 2. preparing & uploading ------------------------------------------------
+
+data.list$parameters_plot <- prepare_data("parameters_plot")
+
+upload_data("parameters_plot")
+
+# WINSCANOPY --------------------------------------------------------------
+
+setwd("C:/Users/Ondrej_Vostarek/Downloads")
+
+# 1. reading --------------------------------------------------------------
+
+# ## raw data
+# 
+# canopy.list <- list.files(pattern = "*.txt", recursive = F)
+# 
+# canopy.df <- tibble()
+# 
+# for (i in canopy.list) {
+# 
+#   can.data <- read_delim(i, delim = "\t", skip = 6, col_names = F)
+# 
+#   can.names <- read_delim(i, delim = "\t", skip = 1, n_max = 1, col_names = F) %>%
+#     select(1:ncol(can.data))
+# 
+#   colnames(can.data) <- can.names[1,]
+# 
+# }
+# 
+# openxlsx::write.xlsx(x = canopy.df, file = "canopy.xlsx", row.names = F)
+# 
+# ### The structure of the raw data needs to be checked and adjusted manually.
+
+data.list$canopy_analysis <- openxlsx::read.xlsx("canopy.xlsx", sheet = 2) %>%
+  gather(., parameter, value, 3:15) %>%
+  mutate(plotid = case_when(
+    nchar(file) == 19 ~ substr(file, 1, 13),
+    nchar(file) == 18 ~ substr(file, 1, 12),
+    nchar(file) == 17 ~ substr(file, 1, 11)),
+    transect = case_when(
+      nchar(file) == 19 ~ substr(file, 15, 15),
+      nchar(file) == 18 ~ substr(file, 14, 14),
+      nchar(file) == 17 ~ substr(file, 13, 13)),
+    date = substr(date, 1, 4),
+    date = as.numeric(date))
+    
+# 2. preparing & uploading ------------------------------------------------
+
+data.list$canopy_analysis <- prepare_data("canopy_analysis")
+
+upload_data("canopy_analysis")
+
+# DEADWOOD POSITIONS ------------------------------------------------------
+
+setwd("C:/Users/Ondrej_Vostarek/Downloads")
+
+# 1. reading --------------------------------------------------------------
+
+### Sheet name, date and plot codes need to be adjusted; column names, species and decay codes checked. 
+
+data.list$deadwood_tree <- openxlsx::read.xlsx("fieldmap_data.xlsx", sheet = "") %>%
+  select(plotid = IDPlots, IDT = ID, species = Døevina, decay = Tøída.rozkladu, length_m = `Length,m`, volume_m3 = `Volume,m3`) %>%
+  mutate(date = ,
+  plotid = case_when(
+    plotid %in%  ~ "",   
+    plotid %in%  ~ "",   
+    plotid %in%  ~ "",   
+    plotid %in%  ~ "", 
+    plotid %in%  ~ "",  
+    plotid %in%  ~ "",  
+    plotid %in%  ~ ""),
+  species = case_when(
+    species %in% 100 ~ "99",
+    species %in% 200 ~ "Picea abies",
+    species %in% 300 ~ "Fagus sylvatica",
+    species %in% 400 ~ "Abies alba",
+    species %in% 500 ~ "Acer pseudoplatanus",
+    species %in% 600 ~ "Acer platanoides",
+    species %in% 700 ~ "Fraxinus excelsior",
+    species %in% 800 ~ "Sorbus aucuparia",
+    species %in% 900 ~ "Ulmus",
+    TRUE ~ 99),
+  decay = case_when(
+    decay %in% 100 ~ 1,
+    decay %in% 200 ~ 2,
+    decay %in% 300 ~ 3,
+    decay %in% 400 ~ 4,
+    decay %in% 500 ~ 5,
+    TRUE ~ 99),
+  length_m = round(length_m, 2),
+  volume_m3 = round(volume_m3, 5)) %>%
+  filter(!plotid %in% NA)
+
+data.list$deadwood_position <- openxlsx::read.xlsx("fieldmap_data.xlsx", sheet = "") %>%
+  select(plotid = IDPlots, IDT = IDDeadwood_rem2017_1, end_number = ID, diameter_mm = Diam_mm, x_m = X_m, y_m = Y_m, z_m = Z_m) %>%
+  mutate(plotid = case_when(
+    plotid %in%  ~ "",   
+    plotid %in%  ~ "",   
+    plotid %in%  ~ "",   
+    plotid %in%  ~ "", 
+    plotid %in%  ~ "",  
+    plotid %in%  ~ "",  
+    plotid %in%  ~ "")) %>% 
+  filter(!plotid %in% NA) %>%
+  distinct(., .keep_all = T)
+
+# 2. preparing & uploading ------------------------------------------------
+
+data.list$deadwood_tree <- prepare_data("deadwood_tree")
+data.list$deadwood_position <- prepare_data("deadwood_position")
+
+data.list$deadwood_tree <- data.list$deadwood_tree %>% select(colorder("deadwood_tree"))
+
+upload_data("deadwood_tree", "deadwood_position")
+
+# disconnection -----------------------------------------------------------
+
+poolClose(KELuser)
+poolClose(KELadmin)
+
