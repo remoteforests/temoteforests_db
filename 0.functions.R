@@ -610,7 +610,7 @@ read_data <- function(name){
       
     }
     
-    names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
+    data.df <- rename(data.df)
     
     return(data.df)
     
@@ -650,7 +650,7 @@ read_data <- function(name){
         
       }
       
-      names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
+      data.df <- rename(data.df)
       
       return(data.df)
       
@@ -672,7 +672,7 @@ read_data <- function(name){
           
         }
         
-        names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
+        data.df <- rename(data.df)
         
         return(data.df)
         
@@ -696,7 +696,7 @@ read_data <- function(name){
             
           }
           
-          names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
+          data.df <- rename(data.df)
           
           return(data.df)
           
@@ -718,7 +718,7 @@ read_data <- function(name){
               
             }
             
-            names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
+            data.df <- rename(data.df)
             
             return(data.df)
             
@@ -743,7 +743,7 @@ read_data <- function(name){
                 
               }
               
-              names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
+              data.df <- rename(data.df)
               
               return(data.df)
               
@@ -768,7 +768,7 @@ read_data <- function(name){
                   
                 }
                 
-                names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
+                data.df <- rename(data.df)
                 
                 return(data.df)
                 
@@ -796,7 +796,7 @@ read_data <- function(name){
                     
                   }
                   
-                  names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
+                  data.df <- rename(data.df)
                   
                   return(data.df)
                   
@@ -868,13 +868,10 @@ prepare_data <- function(name){
   
   if(name == "plot"){
     
-    id.max <- tbl(KELuser, name) %>% filter(id == max(id, na.rm = TRUE)) %>% pull(id)
+    id.max <- pull_id(name)
     
-    data.df <- as.data.frame(data.list[name])
-    
-    names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
-    
-    data.df <- data.df %>% mutate(id = row_number() + id.max) %>% select(colorder(name))
+    data.df <- as.data.frame(data.list[name]) %>% rename(.) %>% 
+      mutate(id = row_number() + id.max) %>% select(colorder(name))
     
     return(data.df)
     
@@ -883,15 +880,12 @@ prepare_data <- function(name){
     if(name == "tree" | name == "deadwood" | name == "regeneration" | name == "regeneration_subplot" |
        name == "parameters_plot" | name == "canopy_analysis") {
       
-      id.max <- tbl(KELuser, name) %>% filter(id == max(id, na.rm = TRUE)) %>% pull(id)
+      id.max <- pull_id(name)
       
       plot_id <- tbl(KELuser, "plot") %>% select(date, plotid, plot_id = id) %>% collect()
       
-      data.df <- as.data.frame(data.list[name])
-      
-      names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
-      
-      data.df <- data.df %>% inner_join(., plot_id, by = c("date", "plotid")) %>% 
+      data.df <- as.data.frame(data.list[name]) %>% rename(.) %>% 
+        inner_join(., plot_id, by = c("date", "plotid")) %>% 
         mutate(id = row_number() + id.max) %>% select(colorder(name))
       
       return(data.df)
@@ -900,17 +894,14 @@ prepare_data <- function(name){
       
       if(name == "mortality" | name == "microsites" | name == "quality" | name == "core"){
         
-        id.max <- tbl(KELuser, name) %>% filter(id == max(id, na.rm = TRUE)) %>% pull(id)
+        id.max <- pull_id(name)
         
         tree_id <- tbl(KELuser, "tree") %>% select(tree_id = id, treeid, plot_id) %>%
           inner_join(., tbl(KELuser, "plot") %>% select(date, plot_id = id), by = "plot_id") %>%
           collect()
         
-        data.df <- as.data.frame(data.list[name])
-        
-        names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
-        
-        data.df <- data.df %>% inner_join(., tree_id, by = c("date", "plotid")) %>% 
+        data.df <- as.data.frame(data.list[name]) %>% rename(.) %>%
+          inner_join(., tree_id, by = c("date", "plotid")) %>% 
           mutate(id = row_number() + id.max) %>% select(colorder(name))
         
         return(data.df)
@@ -919,18 +910,15 @@ prepare_data <- function(name){
         
         if(name == "ring"){
           
-          id.max <- tbl(KELuser, name) %>% filter(id == max(id, na.rm = TRUE)) %>% pull(id)
+          id.max <- pull_id(name)
           
           core_id <- tbl(KELuser, "core") %>% select(core_id = id, tree_id) %>%
             inner_join(., tbl(KELuser, "tree") %>% select(tree_id = id, treeid, plot_id), by = "tree_id") %>%
             inner_join(., tbl(KELuser, "plot") %>% select(plot_id = id, date), by = "plot_id") %>%
             collect()
           
-          data.df <- as.data.frame(data.list[name])
-          
-          names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
-          
-          data.df <- data.df %>% inner_join(., core_id, by = c("date", "plotid")) %>% 
+          data.df <- as.data.frame(data.list[name]) %>% rename(.) %>%
+            inner_join(., core_id, by = c("date", "plotid")) %>% 
             mutate(id = row_number() + id.max) %>% select(colorder(name))
           
           return(data.df)
@@ -939,14 +927,10 @@ prepare_data <- function(name){
          
           if(name == "dist_tree"){
             
-            id.max <- tbl(KELuser, name) %>% filter(id == max(id, na.rm = TRUE)) %>% pull(id)
+            id.max <- pull_id(name)
             
-            data.df <- as.data.frame(data.list[name])
-            
-            names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
-            
-            data.df <- data.df %>% mutate(dbh_mm = round(dbh_mm, digits = 0), 
-                                          id = row_number() + id.max) %>% 
+            data.df <- as.data.frame(data.list[name]) %>% rename(.) %>%
+              mutate(dbh_mm = round(dbh_mm, digits = 0), id = row_number() + id.max) %>% 
               select(colorder(name))
             
             return(data.df)
@@ -955,16 +939,13 @@ prepare_data <- function(name){
             
             if(name == "dist_plot"){
               
-              id.max <- tbl(KELuser, name) %>% filter(id == max(id, na.rm = TRUE)) %>% pull(id)
+              id.max <- pull_id(name)
               
               plot_id <- tbl(KELuser, "plot") %>% filter(census %in% 1) %>% 
                 select(plotid, plot_id = id) %>% collect()
               
-              data.df <- as.data.frame(data.list[name])
-              
-              names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
-              
-              data.df <- data.df %>%
+              data.df <- as.data.frame(data.list[name]) %>% 
+                rename(.) %>%
                 separate(., 
                          plotid, 
                          c('foresttype','country', 'location', 'stand', 'plotid'), 
@@ -984,18 +965,15 @@ prepare_data <- function(name){
               
               if(name == "dist_plot_event"){
                 
-                id.max <- tbl(KELuser, name) %>% filter(id == max(id, na.rm = TRUE)) %>% pull(id)
+                id.max <- pull_id(name)
                 
                 event_id <- tbl(KELuser, "dist_plot") %>%
                   inner_join(., tbl(KELuser, "plot"), by = c("plot_id" = "id")) %>%
                   select(dist_plot_id = id, plotid, year)
                   collect()
                 
-                data.df <- as.data.frame(data.list[name])
-                
-                names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
-                
-                data.df <- data.df %>% 
+                data.df <- as.data.frame(data.list[name]) %>%
+                  rename(.) %>%
                   filter(method %in% "10_10_5") %>%
                   separate(., 
                            plotid,
@@ -1012,15 +990,12 @@ prepare_data <- function(name){
                 
                 if(name == "deadwood_tree"){
                   
-                  id.max <- tbl(KELuser, name) %>% filter(id == max(id, na.rm = TRUE)) %>% pull(id)
+                  id.max <- pull_id(name)
                   
                   plot_id <- tbl(KELuser, "plot") %>% select(date, plotid, plot_id = id) %>% collect()
                   
-                  data.df <- as.data.frame(data.list[name])
-                  
-                  names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
-                  
-                  data.df <- data.df %>% inner_join(., plot_id, by = c("date", "plotid")) %>% 
+                  data.df <- as.data.frame(data.list[name]) %>% rename(.) %>%
+                    inner_join(., plot_id, by = c("date", "plotid")) %>% 
                     mutate(id = row_number() + id.max) 
                   
                   return(data.df)
@@ -1029,15 +1004,12 @@ prepare_data <- function(name){
                   
                   if(name == "deadwood_position"){
                     
-                    id.max <- tbl(KELuser, name) %>% filter(id == max(id, na.rm = TRUE)) %>% pull(id)
+                    id.max <- pull_id(name)
                     
                     dwtree_id <- data.list$deadwood_tree %>% select(deadwood_tree_id = id, plotid, ID)
                     
-                    data.df <- as.data.frame(data.list[name])
-                    
-                    names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
-                    
-                    data.df <- data.df %>% inner_join(., dwtree_id, by = c("plotid", "IDT")) %>% 
+                    data.df <- as.data.frame(data.list[name]) %>% rename(.) %>%
+                      inner_join(., dwtree_id, by = c("plotid", "IDT")) %>% 
                       mutate(id = row_number() + id.max) %>% select(colorder(name))
                     
                     return(data.df)
@@ -1063,9 +1035,7 @@ upload_data <- function(x){
   
   for (i in x) {
     
-    data.df <- as.data.frame(data.list[i])
-    
-    names(data.df) <- gsub("^(.*)[:.:](.*)$", "\\2", names(data.df))
+    data.df <- as.data.frame(data.list[i]) %>% rename(.)
     
     dbWriteTable(conn = KELadmin, 
                  name = i,
@@ -1073,4 +1043,22 @@ upload_data <- function(x){
                  overwrite = F, append = T, row.names = F)
     
   }
+}
+
+rename <- function(x){
+  #' @description rename columns
+  #' @param x data table to rename
+  
+  names(x) <- gsub("^(.*)[:.:](.*)$", "\\2", names(x))
+  
+  return(x)
+  
+}
+
+pull_id <- function(name){
+  #' @description pull the maximal id from a database table
+  #' @param name name of the database table from which the id should be pulled
+  
+  id <- tbl(KELuser, name) %>% filter(id == max(id, na.rm = TRUE)) %>% pull(id)
+  
 }
