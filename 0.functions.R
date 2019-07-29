@@ -562,7 +562,7 @@ check_dendro_data <- function(data, fk) {
 
 colorder <- function(name){tbl(KELuser, name) %>% colnames()}
 
-movingSum <- function(x, windowLength = 10){
+movingSum <- function(x, windowLength = 11){
   rollapply( x, 
              width = windowLength,
              FUN = sum,
