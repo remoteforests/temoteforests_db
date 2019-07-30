@@ -610,7 +610,7 @@ read_data <- function(name){
       
     }
     
-    data.df <- rename(data.df)
+    data.df <- rename_col(data.df)
     
     return(data.df)
     
@@ -650,7 +650,7 @@ read_data <- function(name){
         
       }
       
-      data.df <- rename(data.df)
+      data.df <- rename_col(data.df)
       
       return(data.df)
       
@@ -672,7 +672,7 @@ read_data <- function(name){
           
         }
         
-        data.df <- rename(data.df)
+        data.df <- rename_col(data.df)
         
         return(data.df)
         
@@ -696,7 +696,7 @@ read_data <- function(name){
             
           }
           
-          data.df <- rename(data.df)
+          data.df <- rename_col(data.df)
           
           return(data.df)
           
@@ -718,7 +718,7 @@ read_data <- function(name){
               
             }
             
-            data.df <- rename(data.df)
+            data.df <- rename_col(data.df)
             
             return(data.df)
             
@@ -743,7 +743,7 @@ read_data <- function(name){
                 
               }
               
-              data.df <- rename(data.df)
+              data.df <- rename_col(data.df)
               
               return(data.df)
               
@@ -768,7 +768,7 @@ read_data <- function(name){
                   
                 }
                 
-                data.df <- rename(data.df)
+                data.df <- rename_col(data.df)
                 
                 return(data.df)
                 
@@ -796,7 +796,7 @@ read_data <- function(name){
                     
                   }
                   
-                  data.df <- rename(data.df)
+                  data.df <- rename_col(data.df)
                   
                   return(data.df)
                   
@@ -870,7 +870,7 @@ prepare_data <- function(name){
     
     id.max <- pull_id(name)
     
-    data.df <- as.data.frame(data.list[name]) %>% rename(.) %>% 
+    data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>% 
       mutate(id = row_number() + id.max) %>% select(colorder(name))
     
     return(data.df)
@@ -884,7 +884,7 @@ prepare_data <- function(name){
       
       plot_id <- tbl(KELuser, "plot") %>% select(date, plotid, plot_id = id) %>% collect()
       
-      data.df <- as.data.frame(data.list[name]) %>% rename(.) %>% 
+      data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>% 
         inner_join(., plot_id, by = c("date", "plotid")) %>% 
         mutate(id = row_number() + id.max) %>% select(colorder(name))
       
@@ -900,7 +900,7 @@ prepare_data <- function(name){
           inner_join(., tbl(KELuser, "plot") %>% select(date, plot_id = id), by = "plot_id") %>%
           collect()
         
-        data.df <- as.data.frame(data.list[name]) %>% rename(.) %>%
+        data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
           inner_join(., tree_id, by = c("date", "plotid")) %>% 
           mutate(id = row_number() + id.max) %>% select(colorder(name))
         
@@ -917,7 +917,7 @@ prepare_data <- function(name){
             inner_join(., tbl(KELuser, "plot") %>% select(plot_id = id, date), by = "plot_id") %>%
             collect()
           
-          data.df <- as.data.frame(data.list[name]) %>% rename(.) %>%
+          data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
             inner_join(., core_id, by = c("date", "plotid")) %>% 
             mutate(id = row_number() + id.max) %>% select(colorder(name))
           
@@ -929,7 +929,7 @@ prepare_data <- function(name){
             
             id.max <- pull_id(name)
             
-            data.df <- as.data.frame(data.list[name]) %>% rename(.) %>%
+            data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
               mutate(dbh_mm = round(dbh_mm, digits = 0), id = row_number() + id.max) %>% 
               select(colorder(name))
             
@@ -945,19 +945,19 @@ prepare_data <- function(name){
                 select(plotid, plot_id = id) %>% collect()
               
               data.df <- as.data.frame(data.list[name]) %>% 
-                rename(.) %>%
+                rename_col(.) %>%
                 separate(., 
                          plotid, 
                          c('foresttype','country', 'location', 'stand', 'plotid'), 
                          sep = "/") %>%
                 inner_join(., plot_id, by = c("plotid")) %>%
                 group_by(plot_id) %>%
-                mutate(severity = movingSum(ca_per)) %>%
+                mutate(severity = movingSum(ca)) %>%
                 ungroup() %>%
                 mutate(ca = round(ca, digits = 2),
                        value = round(value, digits = 5),
                        id = row_number() + id.max) %>%
-                select(id, plot_id, year, ca_per = ca, kde = value)
+                select(id, plot_id, year, ca_per = ca, kde = value, severity)
                 
               return(data.df)
               
@@ -969,11 +969,11 @@ prepare_data <- function(name){
                 
                 event_id <- tbl(KELuser, "dist_plot") %>%
                   inner_join(., tbl(KELuser, "plot"), by = c("plot_id" = "id")) %>%
-                  select(dist_plot_id = id, plotid, year)
+                  select(dist_plot_id = id, plotid, year) %>%
                   collect()
                 
                 data.df <- as.data.frame(data.list[name]) %>%
-                  rename(.) %>%
+                  rename_col(.) %>%
                   filter(method %in% "10_10_5") %>%
                   separate(., 
                            plotid,
@@ -994,7 +994,7 @@ prepare_data <- function(name){
                   
                   plot_id <- tbl(KELuser, "plot") %>% select(date, plotid, plot_id = id) %>% collect()
                   
-                  data.df <- as.data.frame(data.list[name]) %>% rename(.) %>%
+                  data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
                     inner_join(., plot_id, by = c("date", "plotid")) %>% 
                     mutate(id = row_number() + id.max) 
                   
@@ -1008,7 +1008,7 @@ prepare_data <- function(name){
                     
                     dwtree_id <- data.list$deadwood_tree %>% select(deadwood_tree_id = id, plotid, ID)
                     
-                    data.df <- as.data.frame(data.list[name]) %>% rename(.) %>%
+                    data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
                       inner_join(., dwtree_id, by = c("plotid", "IDT")) %>% 
                       mutate(id = row_number() + id.max) %>% select(colorder(name))
                     
@@ -1035,7 +1035,7 @@ upload_data <- function(x){
   
   for (i in x) {
     
-    data.df <- as.data.frame(data.list[i]) %>% rename(.)
+    data.df <- as.data.frame(data.list[i]) %>% rename_col(.)
     
     dbWriteTable(conn = KELadmin, 
                  name = i,
@@ -1045,7 +1045,7 @@ upload_data <- function(x){
   }
 }
 
-rename <- function(x){
+rename_col <- function(x){
   #' @description rename columns
   #' @param x data table to rename
   
