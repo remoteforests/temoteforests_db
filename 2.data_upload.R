@@ -17,7 +17,7 @@ data.list$plot <- read_data("plot")
 data.list$tree <- read_data("tree")
 data.list$mortality <- read_data("mortality")
 data.list$microsites <- read_data("microsites")
-data.list$quality <- read_data("quality")
+data.list$tree_quality <- read_data("tree_quality")
 data.list$deadwood <- read_data("deadwood")
 data.list$regeneration <- read_data("regeneration")
 data.list$regeneration_subplot <- read_data("regeneration_subplot")
@@ -43,9 +43,9 @@ upload_data(x = c("tree", "deadwood", "regeneration", "regeneration_subplot"))
 
 data.list$mortality <- prepare_data("mortality")
 data.list$microsites <- prepare_data("microsites")
-data.list$quality <- prepare_data("quality")
+data.list$tree_quality <- prepare_data("tree_quality")
 
-upload_data(x = c("mortality", "microsites", "quality"))
+upload_data(x = c("mortality", "microsites", "tree_quality"))
 
 # DENDROCHRONOLOGICAL DATA ------------------------------------------------
 

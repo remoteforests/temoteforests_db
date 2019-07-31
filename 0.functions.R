@@ -417,9 +417,9 @@ clean_structural_data <- function(data){
     filter(row_number() == 1) %>%
     select(-distance_m, -foresttype, -old_x, -mort_agent)
   
-  # quality
+  # tree_quality
   
-  data.clean$quality <- data.clean$tree %>%
+  data.clean$tree_quality <- data.clean$tree %>%
     inner_join(., tree.db %>% select(treeid, onplot, treetype, x_m, y_m, status, growth, layer, species, dbh_mm, height_m, decay, decayht), by = "treeid") %>%
     mutate(x_m_diff = ifelse(!x_m.x %in% NA & !x_m.y %in% NA, abs(x_m.x - x_m.y), 0),
            y_m_diff = ifelse(!y_m.x %in% NA & !y_m.y %in% NA, abs(y_m.x - y_m.y), 0),
@@ -702,9 +702,9 @@ read_data <- function(name){
           
         } else {
           
-          if(name == "quality"){
+          if(name == "tree_quality"){
             
-            quality.list <- list.files(pattern = "*_quality.csv", recursive = F)
+            quality.list <- list.files(pattern = "*_tree_quality.csv", recursive = F)
             
             data.df <- tibble()
             
@@ -712,9 +712,9 @@ read_data <- function(name){
               
               data.df <- bind_rows(data.df,
                                    read.table(i, sep = ",", header = T, stringsAsFactors = F) %>%
-                                     mutate(quality.date = as.numeric(quality.date),
-                                            quality.treeid = as.character(quality.treeid),
-                                            quality.quality = as.numeric(quality.quality)))
+                                     mutate(tree_quality.date = as.numeric(tree_quality.date),
+                                            tree_quality.treeid = as.character(tree_quality.treeid),
+                                            tree_quality.quality = as.numeric(tree_quality.quality)))
               
             }
             
@@ -892,7 +892,7 @@ prepare_data <- function(name){
       
     } else {
       
-      if(name == "mortality" | name == "microsites" | name == "quality" | name == "core"){
+      if(name == "mortality" | name == "microsites" | name == "tree_quality" | name == "core"){
         
         id.max <- pull_id(name)
         
