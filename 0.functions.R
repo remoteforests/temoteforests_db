@@ -189,7 +189,7 @@ check_structural_data <- function(data, fk) {
 
   tree.check <- tree.db %>%
     select(treeid, status_old = status, dbh_old = dbh_mm) %>%
-    right_join(., data.list$tree, by = "treeid")
+    right_join(., data$tree, by = "treeid")
     
   # plot
   
@@ -901,7 +901,7 @@ prepare_data <- function(name){
           collect()
         
         data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
-          inner_join(., tree_id, by = c("date", "plotid")) %>% 
+          inner_join(., tree_id, by = c("date", "treeid")) %>% 
           mutate(id = row_number() + id.max) %>% select(colorder(name))
         
         return(data.df)

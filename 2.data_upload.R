@@ -15,7 +15,7 @@ setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2018/clean")
 
 data.list$plot <- read_data("plot")
 data.list$tree <- read_data("tree")
-data.list$mortality < read_data("mortality")
+data.list$mortality <- read_data("mortality")
 data.list$microsites <- read_data("microsites")
 data.list$quality <- read_data("quality")
 data.list$deadwood <- read_data("deadwood")
@@ -165,7 +165,7 @@ setwd("C:/Users/Ondrej_Vostarek/Downloads")
 ### Sheet name, date and plot codes need to be adjusted; column names, species and decay codes checked. 
 
 data.list$deadwood_tree <- openxlsx::read.xlsx("fieldmap_data.xlsx", sheet = "") %>%
-  select(plotid = IDPlots, IDT = ID, species = Døevina, decay = Tøída.rozkladu, length_m = `Length,m`, volume_m3 = `Volume,m3`) %>%
+  select(plotid = IDPlots, IDT = ID, species = D?evina, decay = T??da.rozkladu, length_m = `Length,m`, volume_m3 = `Volume,m3`) %>%
   mutate(date = ,
   plotid = case_when(
     plotid %in%  ~ "",   
