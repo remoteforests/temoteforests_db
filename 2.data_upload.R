@@ -102,7 +102,7 @@ upload_data("dist_plot_event")
 
 # 1. reading --------------------------------------------------------------
 
-data.list$parameters_plot <- final_table
+data.list$parameters_plot <- data.all
 
 # 2. preparing & uploading ------------------------------------------------
 

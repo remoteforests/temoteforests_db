@@ -877,8 +877,7 @@ prepare_data <- function(name){
     
   } else {
     
-    if(name == "tree" | name == "deadwood" | name == "regeneration" | name == "regeneration_subplot" |
-       name == "parameters_plot" | name == "canopy_analysis") {
+    if(name == "tree" | name == "deadwood" | name == "regeneration" | name == "regeneration_subplot" | name == "canopy_analysis") {
       
       id.max <- pull_id(name)
       
@@ -1015,9 +1014,21 @@ prepare_data <- function(name){
                     return(data.df)
                   
                   } else {
+                    
+                    if(name == "paramaters_plot"){
+                      
+                      id.max <- pull_id(name)
+                      
+                      data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>% 
+                        mutate(id = row_number() + id.max) %>% select(colorder(name))
+                      
+                      return(data.df)
+                      
+                    } else {
                   
                     stop("Unknown name of the data file.")
                   
+                    }
                   }
                 }
               }
