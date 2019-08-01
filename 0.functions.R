@@ -560,9 +560,19 @@ check_dendro_data <- function(data, fk) {
   
 }
 
-colorder <- function(name){tbl(KELuser, name) %>% colnames()}
+colorder <- function(name){
+  #'@description arrange columns of a data.frame in the same order as in the corresponding table in database 
+  #'@param name name of the database table
+  
+  tbl(KELuser, name) %>% colnames()
+  
+}
 
 movingSum <- function(x, windowLength = 11){
+  #'@description calculate the moving sum of values
+  #'@param x vector of numerical values
+  #'@param windowLength length of the moving window
+  
   rollapply( x, 
              width = windowLength,
              FUN = sum,
@@ -570,6 +580,7 @@ movingSum <- function(x, windowLength = 11){
              align = "center",
              na.rm = T,
              partial = TRUE)
+
 }
 
 read_data <- function(name){
