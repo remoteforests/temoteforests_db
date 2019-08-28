@@ -1026,7 +1026,7 @@ prepare_data <- function(name){
                   
                   } else {
                     
-                    if(name == "paramaters_plot"){
+                    if(name == "parameters_plot"){
                       
                       id.max <- pull_id(name)
                       
