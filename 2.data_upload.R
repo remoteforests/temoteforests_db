@@ -193,7 +193,7 @@ data.list$deadwood_tree <- openxlsx::read.xlsx(".xlsx", sheet = "") %>%
   filter(!plotid %in% NA)
 
 data.list$deadwood_position <- openxlsx::read.xlsx(".xlsx", sheet = "") %>%
-  select(plotid = , IDT = , end_number = , diameter_mm = , x_m = , y_m = , z_m = \) %>%
+  select(plotid = , IDT = , end_number = , diameter_mm = , x_m = , y_m = , z_m = ) %>%
   mutate(plotid = case_when(
     plotid  %in%  ~ "",
     plotid  %in%  ~ "")) %>% 
