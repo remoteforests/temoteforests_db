@@ -385,7 +385,7 @@ clean_structural_data <- function(data){
              foresttype %in% "beech" & distance_m <= 7.99 ~ 1,
              foresttype %in% "beech" & distance_m > 7.99 & distance_m <= 17.84 ~ 2,
              foresttype %in% "beech" & distance_m > 17.84 & distance_m <= 21.85 ~ 3,
-             distance_m %in% NA ~ onplot,
+             distance_m %in% NA ~ 99,
              TRUE ~ 0),
            census = case_when(
              !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[census %in% c(3, 6)] & distance_m > 12.62 ~ 3,
@@ -1016,7 +1016,7 @@ prepare_data <- function(name){
                     
                     id.max <- pull_id(name)
                     
-                    dwtree_id <- data.list$deadwood_tree %>% select(deadwood_tree_id = id, plotid, ID)
+                    dwtree_id <- data.list$deadwood_tree %>% select(deadwood_tree_id = id, plotid, IDT)
                     
                     data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
                       inner_join(., dwtree_id, by = c("plotid", "IDT")) %>% 

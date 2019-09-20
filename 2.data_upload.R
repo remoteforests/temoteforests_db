@@ -164,17 +164,12 @@ setwd("C:/Users/Ondrej_Vostarek/Downloads")
 
 ### Sheet name, date and plot codes need to be adjusted; column names, species and decay codes checked. 
 
-data.list$deadwood_tree <- openxlsx::read.xlsx("fieldmap_data.xlsx", sheet = "") %>%
-  select(plotid = IDPlots, IDT = ID, species = D?evina, decay = T??da.rozkladu, length_m = `Length,m`, volume_m3 = `Volume,m3`) %>%
-  mutate(date = ,
+data.list$deadwood_tree <- openxlsx::read.xlsx(".xlsx", sheet = "") %>%
+  select(plotid = , IDT = , species = , decay = , length_m = , volume_m3 = ) %>%
+  mutate(date = 2019,
   plotid = case_when(
-    plotid %in%  ~ "",   
-    plotid %in%  ~ "",   
-    plotid %in%  ~ "",   
-    plotid %in%  ~ "", 
-    plotid %in%  ~ "",  
-    plotid %in%  ~ "",  
-    plotid %in%  ~ ""),
+    plotid  %in%  ~ "",
+    plotid  %in%  ~ ""),
   species = case_when(
     species %in% 100 ~ "99",
     species %in% 200 ~ "Picea abies",
@@ -185,7 +180,7 @@ data.list$deadwood_tree <- openxlsx::read.xlsx("fieldmap_data.xlsx", sheet = "")
     species %in% 700 ~ "Fraxinus excelsior",
     species %in% 800 ~ "Sorbus aucuparia",
     species %in% 900 ~ "Ulmus",
-    TRUE ~ 99),
+    TRUE ~ "99"),
   decay = case_when(
     decay %in% 100 ~ 1,
     decay %in% 200 ~ 2,
@@ -197,16 +192,11 @@ data.list$deadwood_tree <- openxlsx::read.xlsx("fieldmap_data.xlsx", sheet = "")
   volume_m3 = round(volume_m3, 5)) %>%
   filter(!plotid %in% NA)
 
-data.list$deadwood_position <- openxlsx::read.xlsx("fieldmap_data.xlsx", sheet = "") %>%
-  select(plotid = IDPlots, IDT = IDDeadwood_rem2017_1, end_number = ID, diameter_mm = Diam_mm, x_m = X_m, y_m = Y_m, z_m = Z_m) %>%
+data.list$deadwood_position <- openxlsx::read.xlsx(".xlsx", sheet = "") %>%
+  select(plotid = , IDT = , end_number = , diameter_mm = , x_m = , y_m = , z_m = \) %>%
   mutate(plotid = case_when(
-    plotid %in%  ~ "",   
-    plotid %in%  ~ "",   
-    plotid %in%  ~ "",   
-    plotid %in%  ~ "", 
-    plotid %in%  ~ "",  
-    plotid %in%  ~ "",  
-    plotid %in%  ~ "")) %>% 
+    plotid  %in%  ~ "",
+    plotid  %in%  ~ "")) %>% 
   filter(!plotid %in% NA) %>%
   distinct(., .keep_all = T)
 
@@ -217,7 +207,7 @@ data.list$deadwood_position <- prepare_data("deadwood_position")
 
 data.list$deadwood_tree <- data.list$deadwood_tree %>% select(colorder("deadwood_tree"))
 
-upload_data("deadwood_tree", "deadwood_position")
+upload_data(x = c("deadwood_tree", "deadwood_position"))
 
 # disconnection -----------------------------------------------------------
 
