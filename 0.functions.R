@@ -928,7 +928,7 @@ prepare_data <- function(name){
             collect()
           
           data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
-            inner_join(., core_id, by = c("date", "plotid")) %>% 
+            inner_join(., core_id, by = c("date", "treeid")) %>% 
             mutate(id = row_number() + id.max) %>% select(colorder(name))
           
           return(data.df)
