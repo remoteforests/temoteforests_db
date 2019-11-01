@@ -483,15 +483,15 @@ clean_structural_data <- function(data){
   
 }
 
-read_dendro_data <- function(file){
+read_dendro_data <- function(st){
   #' @description read the dendrochronological data from .csv
-  #' @param file name of the .csv file
+  #' @param st name of the stand
   
   data.list <- list()
   
   # core
   
-  data.list$core <- read.table(paste0(file), sep = ",", header = T, stringsAsFactors = F)
+  data.list$core <- read.table(paste("core", st, "csv", sep = "."), sep = ",", header = T, stringsAsFactors = F)
   
   if(!identical(c("date", "treeid", "coreht_m",	"missing_mm", "missing_years", "corestatus",
                   "crossdated",	"cormach"), 
@@ -512,7 +512,7 @@ read_dendro_data <- function(file){
   
   # ring
   
-  data.list$ring <- read.table(paste0(file), sep = ",", header = T, stringsAsFactors = F)
+  data.list$ring <- read.table(paste("ring", st, "csv", sep = "."), sep = ",", header = T, stringsAsFactors = F)
   
   if(!identical(c("date", "treeid", "year",	"incr_mm"), 
                 names(data.list$ring))) 
@@ -553,7 +553,8 @@ check_dendro_data <- function(data, fk) {
   # ring
   
   error.list$R_not_in_core <- anti_join(data$ring, data$core, by = c("date", "treeid"))
-  error.list$R_year <- data$ring %>% filter(year %in% min(year))
+  error.list$R_year_min <- data$ring %>% filter(year %in% min(year))
+  error.list$R_year_max <- data$ring %>% filter(year %in% max(year))
   error.list$R_incr_mm <- data$ring %>% filter(is.na(incr_mm))
   
   return(error.list)

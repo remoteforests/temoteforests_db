@@ -85,11 +85,11 @@ setwd("C:/Users/Ondrej_Vostarek/Downloads")
 
 # 1. reading --------------------------------------------------------------
 
-file <- list.files(pattern = '.csv')
+st <- unique(gsub("^(.*)[:.:](.*)[:.:](.*)$", "\\2", list.files(pattern = '.csv')))
 
 data.raw <- list()
 
-for (i in file) {
+for (i in st) {
   
   data.new <- read_dendro_data(i)
   
@@ -101,7 +101,7 @@ for (i in file) {
 tree.db <- tbl(KELuser, "tree") %>% 
   inner_join(.,
              tbl(KELuser, "plot") %>% 
-               filter(standshort %in% gsub("^(.*)[:.:](.*)[:.:](.*)$", "\\2", file)) %>% 
+               filter(standshort %in% st) %>% 
                select(date, plot_id = id),
              by = "plot_id") %>%
   collect()
@@ -121,7 +121,7 @@ data.clean$ring <- data.raw$ring %>% distinct(., .keep_all = T)
 
 # 3. exporting ------------------------------------------------------------
 
-name <- paste(unique(data.clean$core$date), substr(first(data.clean$core$treeid), 1, 3), gsub("^(.*)[:.:](.*)[:.:](.*)$", "\\2", file), sep = "_")
+name <- paste(unique(data.clean$core$date), substr(first(data.clean$core$treeid), 1, 3), st, sep = "_")
 
 write.table(data.clean$core, paste(name, "core.csv", sep = "_"), sep = ",", row.names = F, na = "")
 write.table(data.clean$ring, paste(name, "ring.csv", sep = "_"), sep = ",", row.names = F, na = "")
