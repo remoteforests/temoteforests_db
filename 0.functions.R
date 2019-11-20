@@ -554,7 +554,7 @@ check_dendro_data <- function(data, fk) {
   
   error.list$R_not_in_core <- anti_join(data$ring, data$core, by = c("date", "treeid"))
   error.list$R_year_min <- data$ring %>% filter(year %in% min(year))
-  error.list$R_year_max <- data$ring %>% filter(year %in% max(year))
+  error.list$R_year_date <- data$ring %>% filter(year > date)
   error.list$R_incr_mm <- data$ring %>% filter(is.na(incr_mm))
   
   return(error.list)
