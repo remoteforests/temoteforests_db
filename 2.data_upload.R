@@ -165,8 +165,8 @@ setwd("C:/Users/Ondrej_Vostarek/Downloads")
 ### Sheet name, date and plot codes need to be adjusted; column names, species and decay codes checked. 
 
 data.list$deadwood_tree <- openxlsx::read.xlsx(".xlsx", sheet = "") %>%
-  select(plotid = , IDT = , species = , decay = , length_m = , volume_m3 = ) %>%
-  mutate(date = 2019,
+  select(plotid = , object_id = , species = , decay = , length_m = , volume_m3 = ) %>%
+  mutate(date = ,
   plotid = case_when(
     plotid  %in%  ~ "",
     plotid  %in%  ~ ""),
@@ -193,10 +193,11 @@ data.list$deadwood_tree <- openxlsx::read.xlsx(".xlsx", sheet = "") %>%
   filter(!plotid %in% NA)
 
 data.list$deadwood_position <- openxlsx::read.xlsx(".xlsx", sheet = "") %>%
-  select(plotid = , IDT = , end_number = , diameter_mm = , x_m = , y_m = , z_m = ) %>%
-  mutate(plotid = case_when(
-    plotid  %in%  ~ "",
-    plotid  %in%  ~ "")) %>% 
+  select(plotid = , object_id = , end_number = , diameter_mm = , x_m = , y_m = , z_m = ) %>%
+  mutate(date = ,
+    plotid = case_when(
+      plotid  %in%  ~ "",
+      plotid  %in%  ~ "")) %>% 
   filter(!plotid %in% NA) %>%
   distinct(., .keep_all = T)
 
