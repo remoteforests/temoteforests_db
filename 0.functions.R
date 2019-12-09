@@ -1017,10 +1017,13 @@ prepare_data <- function(name){
                     
                     id.max <- pull_id(name)
                     
-                    dwtree_id <- data.list$deadwood_tree %>% select(deadwood_tree_id = id, plotid, IDT)
+                    plot_id <- tbl(KELuser, "plot") %>% select(date, plotid, plot_id = id) %>% collect()
+                    
+                    dwtree_id <- data.list$deadwood_tree %>% select(deadwood_id = id, plot_id, object_id)
                     
                     data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
-                      inner_join(., dwtree_id, by = c("plotid", "IDT")) %>% 
+                      inner_join(., plot_id, by = c("date", "plotid")) %>%
+                      inner_join(., dwtree_id, by = c("plot_id", "object_id")) %>% 
                       mutate(id = row_number() + id.max) %>% select(colorder(name))
                     
                     return(data.df)
