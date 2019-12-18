@@ -130,6 +130,8 @@ setwd("C:/Users/Ondrej_Vostarek/Downloads")
 #     select(1:ncol(can.data))
 # 
 #   colnames(can.data) <- can.names[1,]
+#
+#   canopy.df <- bind_rows(canopy.df, can.data)
 # 
 # }
 # 
