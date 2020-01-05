@@ -118,9 +118,7 @@ setwd("C:/Users/Ondrej_Vostarek/Downloads")
 
 # ## raw data
 # 
-# canopy.list <- list.files(pattern = "*.txt", recursive = F)
-# 
-# canopy.df <- tibble()
+# canopy.list <- list.files(pattern = "*raw.txt", recursive = F)
 # 
 # for (i in canopy.list) {
 # 
@@ -130,25 +128,29 @@ setwd("C:/Users/Ondrej_Vostarek/Downloads")
 #     select(1:ncol(can.data))
 # 
 #   colnames(can.data) <- can.names[1,]
-#
-#   canopy.df <- bind_rows(canopy.df, can.data)
 # 
+#   openxlsx::write.xlsx(x = can.data, file = paste0(substr(i, 1, nchar(i) - 7), "clean.xlsx"), row.names = F)
+#   
 # }
-# 
-# openxlsx::write.xlsx(x = canopy.df, file = "canopy.xlsx", row.names = F)
 # 
 # ### The structure of the raw data needs to be checked and adjusted manually.
 
-data.list$canopy_analysis <- openxlsx::read.xlsx("canopy.xlsx", sheet = 2) %>%
+canopy.list <- list.files(pattern = "*clean.xlsx", recursive = F)
+
+canopy.df <- tibble()
+
+for (i in canopy.list) {
+  
+  can.new <- openxlsx::read.xlsx(i, sheet = 2)
+  
+  canopy.df <- bind_rows(canopy.df, can.new)
+  
+}
+
+data.list$canopy_analysis <- canopy.df %>%
   gather(., parameter, value, 3:15) %>%
-  mutate(plotid = case_when(
-    nchar(file) == 19 ~ substr(file, 1, 13),
-    nchar(file) == 18 ~ substr(file, 1, 12),
-    nchar(file) == 17 ~ substr(file, 1, 11)),
-    transect = case_when(
-      nchar(file) == 19 ~ substr(file, 15, 15),
-      nchar(file) == 18 ~ substr(file, 14, 14),
-      nchar(file) == 17 ~ substr(file, 13, 13)),
+  mutate(plotid = substr(file, 1, nchar(file) - 6),
+         transect = substr(file, nchar(file) - 4, nchar(file) - 4),
     date = substr(date, 1, 4),
     date = as.numeric(date))
     
