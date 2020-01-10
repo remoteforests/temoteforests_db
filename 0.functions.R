@@ -300,41 +300,41 @@ clean_structural_data <- function(data){
   
   # plot
   
+  data$plot <- data$plot %>%
+    left_join(., plot.db %>% select(plotid, lng_old, lat_old), by = "plotid") %>%
+    mutate(lng = ifelse(is.na(lng), lng_old, lng),
+           lat = ifelse(is.na(lat), lat_old, lat)) %>%
+    select(-lng_old, -lat_old)
+  
   detach(package:tidyverse, unload = TRUE)
   
   library(rgdal);library(raster)
   
   DEM <- raster("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/Aster_DEM/Europe/DEM.tif")
   
-  data$plot$altitude_m <- extract(DEM, data$plot[,c("lng","lat")], method = "bilinear")
+  for (i in data$plot$plotid) {
+    
+    plot <- data$plot %>% filter(plotid %in% i)
+    
+    coord <- plot[, c("lng", "lat")]
+    
+    data$plot <- data$plot %>% mutate(altitude_m = ifelse(plotid %in% i, extract(DEM, coord, method = "bilinear"), altitude_m))
+    
+  }
   
   detach(package:rgdal, unload = TRUE); detach(package:raster, unload = TRUE)
   
   library(tidyverse)
   
-  census <- tbl(KELuser, "plot") %>% 
-    filter(plotid %in% plot.id & !date %in% date.id) %>%
-    group_by(plotid) %>% 
-    arrange(desc(date)) %>%
-    filter(row_number() == 1) %>%
-    select(plot_id = id, plotid, plotsize_old = plotsize) %>%
-    inner_join(., tbl(KELuser, "tree") %>% filter(!onplot %in% 0), by = "plot_id") %>%
+  census <- data$plot %>%
+    select(date, plotid, plotsize) %>%
+    inner_join(., data$tree %>% filter(!onplot %in% 0), by = c("date", "plotid")) %>%
     mutate(n_pos = ifelse(is.na(x_m), 0, 1)) %>%
-    collect() %>%
-    group_by(plotid, plotsize_old) %>%
+    group_by(plotid, plotsize) %>%
     summarise(n_pos = sum(n_pos),
               n_trees = n(),
-              coef_old = (n_pos/n_trees) * 100) %>%
-    right_join(.,
-               data$plot %>%
-                 select(date, plotid, plotsize) %>%
-                 inner_join(., data$tree %>% filter(!onplot %in% 0), by = c("date", "plotid")) %>%
-                 mutate(n_pos = ifelse(is.na(x_m), 0, 1)) %>%
-                 group_by(plotid, plotsize) %>%
-                 summarise(n_pos = sum(n_pos),
-                           n_trees = n(),
-                           coef_new = (n_pos/n_trees) * 100),
-               by = "plotid") %>%
+              coef_new = (n_pos/n_trees) * 100) %>%
+    left_join(., plot.db, by = "plotid") %>%
     mutate(census_new = case_when(
       is.na(plotsize_old) ~ 1,
       !is.na(plotsize_old) & plotsize %in% plotsize_old & coef_new >= 75 & coef_old >= 75 ~ 2,
