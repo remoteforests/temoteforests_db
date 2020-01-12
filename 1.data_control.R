@@ -81,7 +81,7 @@ error.list <- check_structural_data(data = data.raw, fk = fk.list)
 
 data.clean <- clean_structural_data(data = data.raw)
 
-### Check the effect of distinct() on DEADWOOD, REGENERATION and REGENERATION_SUBPLOT!  
+### Check the effect of distinct() on MICROSITES, DEADWOOD, REGENERATION and REGENERATION_SUBPLOT!  
 
 # 3. exporting ------------------------------------------------------------
 

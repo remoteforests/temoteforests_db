@@ -346,7 +346,8 @@ clean_structural_data <- function(data){
   
   data$plot$census <- census$census_new[data$plot$plotid %in% census$plotid]
   
-  data.clean$plot <- data$plot %>% mutate(altitude_m = round(altitude_m, 0), slope = round(slope, 0), ownership = 1)
+  data.clean$plot <- data$plot %>% 
+    mutate(altitude_m = round(altitude_m, 0), slope = round(slope, 0), aspect = round(aspect, 0), ownership = 1)
   
   # mortality
   
