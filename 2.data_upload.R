@@ -9,7 +9,7 @@ data.list <- list()
 
 # STRUCTURAL DATA ---------------------------------------------------------
 
-setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2018/clean")
+setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2019/clean")
 
 # 1. reading --------------------------------------------------------------
 
@@ -21,6 +21,9 @@ data.list$tree_quality <- read_data("tree_quality")
 data.list$deadwood <- read_data("deadwood")
 data.list$regeneration <- read_data("regeneration")
 data.list$regeneration_subplot <- read_data("regeneration_subplot")
+data.list$soil_profile <- read_data("soil_profile")
+data.list$vegetation <- read_data("vegetation")
+data.list$habitat_signs <- read_data("habitat_signs")
 
 # 2. preparing & uploading ------------------------------------------------
 
@@ -36,8 +39,11 @@ data.list$tree <- prepare_data("tree")
 data.list$deadwood <- prepare_data("deadwood")
 data.list$regeneration <- prepare_data("regeneration")
 data.list$regeneration_subplot <- prepare_data("regeneration_subplot")
+data.list$soil_profile <- prepare_data("soil_profile")
+data.list$vegetation <- prepare_data("vegetation")
+data.list$habitat_signs <- prepare_data("habitat_signs")
 
-upload_data(x = c("tree", "deadwood", "regeneration", "regeneration_subplot"))
+upload_data(x = c("tree", "deadwood", "regeneration", "regeneration_subplot", "soil_profile", "vegetation", "habitat_signs"))
 
 ## tree_id
 
