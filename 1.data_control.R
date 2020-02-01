@@ -38,6 +38,7 @@ for (i in file) {
      data.raw$deadwood <- bind_rows(data.raw$deadwood, data.new$deadwood)
      data.raw$regeneration <- bind_rows(data.raw$regeneration, data.new$regeneration)
      data.raw$regeneration_subplot <- bind_rows(data.raw$regeneration_subplot, data.new$regeneration_subplot)
+     data.raw$soil <- bind_rows(data.raw$soil, data.new$soil)
 
 }
 
@@ -68,6 +69,40 @@ tree.db <- tbl(KELuser, "tree") %>%
                filter(row_number() == 1), 
              by = c("plot_id" = "id")) %>% 
   collect()
+
+## VEGETATION
+
+vegetation.file <- list.files(pattern = '_vegetation.csv')
+
+vegetation.df <- tibble()
+
+for (i in vegetation.file) {
+  
+  data.df <- read.table(i, sep = ";", header = T) 
+  data.df$sampling_date <- as.POSIXct(strptime(data.df$sampling_date,"%d.%m.%Y", tz = "UTC"))
+  
+  vegetation.df <- bind_rows(vegetation.df, data.df)
+  
+}
+
+data.raw$vegetation <- vegetation.df
+
+## HABITAT
+
+habitat.file <- list.files(pattern = '_habitat.csv')
+
+habitat.df <- tibble()
+
+for (i in habitat.file) {
+  
+  data.df <- read.table(i, sep = ";", header = T) 
+  data.df$sampling_date <- as.POSIXct(strptime(data.df$sampling_date,"%d.%m.%Y", tz = "UTC"))
+  
+  habitat.df <- bind_rows(habitat.df, data.df)
+  
+}
+
+data.raw$habitat <- habitat.df
 
 # 2. cleaning -------------------------------------------------------------
 

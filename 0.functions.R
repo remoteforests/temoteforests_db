@@ -44,10 +44,10 @@ read_structural_data <- function(file){
   
   if(!identical(c("date", "plotid", "treeid",	"treen", "onplot", "treetype",
                   "x_m",	"y_m",	"status", "census", "growth", "layer", "species",
-                  "dbh_mm", "height_m", "crownht_m", "crowndiam1_m", "crowndiam2_m",	
-                  "decay", "decay_wood", "decayht"), 
-                names(data.list$tree))) 
-    
+                  "dbh_mm", "height_m", "crownht_m", "crowndiam1_m", "crowndiam2_m",
+                  "decay", "decay_wood", "decayht"),
+                names(data.list$tree)))
+
     stop('The tree data do not match with required table format.')
   
   data.list$tree <- data.list$tree %>%
@@ -109,9 +109,9 @@ read_structural_data <- function(file){
   
   data.list$regeneration <- openxlsx::read.xlsx(paste0(file), sheet = 5)
   
-  if(!identical(c("date", "plotid", "species", "htclass", "regeneratedon", "count"), 
-                names(data.list$regeneration))) 
-    
+  if(!identical(c("date", "plotid", "species", "htclass", "regeneratedon", "count"),
+                names(data.list$regeneration)))
+
     stop('The regeneration data do not match with required table format.')
   
   data.list$regeneration <- data.list$regeneration %>%
@@ -156,6 +156,22 @@ read_structural_data <- function(file){
     mutate(date = as.numeric(date),
            treeid = as.character(treeid),
            mort_agent = as.numeric(mort_agent))
+  
+  # soil
+  
+  data.list$soil <- openxlsx::read.xlsx(paste0(file), sheet = 8)
+  
+  if(!identical(c("date", "plotid", "sample",	"soil_horizon", "depth_cm"), 
+                names(data.list$soil))) 
+    
+    stop('The soil data do not match with required table format.')
+  
+  data.list$soil <- data.list$soil %>%
+    mutate(date = as.numeric(date),
+           plotid = as.character(plotid),
+           sample = as.numeric(sample),
+           soil_horizon = as.character(soil_horizon),
+           depth_cm = as.numeric(depth_cm))
   
   
   return(data.list)
@@ -203,8 +219,8 @@ check_structural_data <- function(data, fk) {
   error.list$P_standshort <- plot.check %>% filter(!standshort %in% B)
   error.list$P_plot <- plot.check %>% filter(!plot_test %in% C)
   error.list$P_subplot <- plot.check %>% filter(!subplot %in% D)
-  error.list$P_plotsize <- data$plot %>% filter(!plotsize %in% c(1000, 1500))
-  error.list$P_dbh_min <- data$plot %>% filter(!dbh_min %in% c(60, 100))
+  error.list$P_plotsize <- data$plot %>% filter(!plotsize %in% c(500, 1000, 1500))
+  error.list$P_dbh_min <- data$plot %>% filter(!dbh_min %in% c(50, 60, 100))
   error.list$P_plottype <- data$plot %>% filter(!plottype %in% fk$plottype_fk)
   error.list$P_plottype_change <- plot.check %>% filter(!plottype %in% plottype_old)
   error.list$P_foresttype <- data$plot %>% filter(!foresttype %in% fk$foresttype_fk)
@@ -243,14 +259,14 @@ check_structural_data <- function(data, fk) {
   error.list$Mo_mort_agent <- data$mortality %>% filter(!mort_agent %in% fk$mort_agent_fk)
   error.list$Mo_alive <- data$tree %>% filter(status %in% c(1:4)) %>% inner_join(., data$mortality, by = "treeid")
   error.list$Mo_dead <- data$tree %>% select(treeid, status_new = status) %>%
-    inner_join(., 
-               tree.db %>% select(treeid, status_old = status), 
-               by = "treeid") %>% 
+    inner_join(.,
+               tree.db %>% select(treeid, status_old = status),
+               by = "treeid") %>%
     filter(!status_old %in% c(1:4) & !status_new %in% c(1:4)) %>%
     inner_join(., data$mortality, by = "treeid")
-  error.list$Mo_0_51 <- data$mortality %>% filter(mort_agent %in% c(0, 51)) %>% 
-    mutate(plotid = substr(treeid, 1, nchar(treeid) - 4)) %>% 
-    group_by(plotid, mort_agent) %>% 
+  error.list$Mo_0_51 <- data$mortality %>% filter(mort_agent %in% c(0, 51)) %>%
+    mutate(plotid = substr(treeid, 1, nchar(treeid) - 4)) %>%
+    group_by(plotid, mort_agent) %>%
     summarise(n = n()) %>%
     filter(mort_agent %in% 0 & n > 2 |
              mort_agent %in% 51 & n < 3)
@@ -287,6 +303,33 @@ check_structural_data <- function(data, fk) {
   error.list$RS_browsing <- data$regeneration_subplot %>% filter(!browsing %in% fk$browsing_fk)
   error.list$RS_regeneratedon <- data$regeneration_subplot %>% filter(!regeneratedon %in% fk$regeneratedon_fk)
   error.list$RS_count <- data$regeneration_subplot %>% filter(count %in% 0)
+  
+  # soil
+  
+  error.list$S_not_in_plot <- anti_join(data$soil, data$plot, by = c("date", "plotid"))
+  error.list$S_sample <- data$soil %>% filter(!sample %in% c(1:5))
+  error.list$S_soil_horizon <- data$soil %>% filter(!soil_horizon %in% fk$soil_horizon_fk)
+  error.list$S_depth_cm <- data$soil %>% filter(is.na(depth_cm))
+  
+  # vegetation
+  
+  error.list$V_not_in_plot <- anti_join(data$vegetation, data$plot, by = c("date", "plotid"))
+  error.list$V_sampling_date <- data$vegetation %>% filter(is.na(sampling_date))
+  error.list$V_large_gap <- data$vegetation %>% filter(!large_gap %in% fk$large_gap_fk)
+  error.list$V_vegetationht <- data$vegetation %>% filter(!vegetationht %in% fk$vegetationheight_fk)
+  error.list$V_biotope_quality <- data$vegetation %>% filter(!biotope_quality %in% fk$biotope_quality_fk)
+  error.list$V_biotope_trend <- data$vegetation %>% filter(!biotope_trend %in% fk$biotope_trend_fk)
+  error.list$V_vegetation_cover <- data$vegetation %>% 
+    mutate(cover = rubus_per + bryopsida_per + polypodiopsida_per + poaceae_per + ericaceae_per + other_per) %>%
+    filter(cover > vegetation_cover)
+  
+  # habitat
+  
+  error.list$H_not_in_plot <- anti_join(data$habitat, data$plot, by = c("date", "plotid"))
+  error.list$H_sampling_date <- data$habitat %>% filter(is.na(sampling_date))
+  error.list$H_species <- data$habitat %>% filter(!animal_species %in% fk$animal_species_fk)
+  error.list$H_gender <- data$habitat %>% filter(!gender %in% fk$gender_fk)
+  error.list$H_habitat_sign_type <- data$habitat %>% filter(!habitat_sign_type %in% fk$habitat_sign_type_fk)
   
   return(error.list)
   
@@ -342,8 +385,8 @@ clean_structural_data <- function(data){
       !is.na(plotsize_old) & plotsize < plotsize_old & coef_new >= 75 & coef_old >= 75 ~ 4,
       !is.na(plotsize_old) & plotsize %in% plotsize_old & (coef_new < 75 | coef_old < 75) ~ 5,
       !is.na(plotsize_old) & plotsize > plotsize_old & (coef_new < 75 | coef_old < 75) ~ 6,
-      !is.na(plotsize_old) & plotsize < plotsize_old & (coef_new < 75 | coef_old < 75) ~ 7)) 
-  
+      !is.na(plotsize_old) & plotsize < plotsize_old & (coef_new < 75 | coef_old < 75) ~ 7))
+
   data$plot$census <- census$census_new[data$plot$plotid %in% census$plotid]
   
   data.clean$plot <- data$plot %>% 
@@ -351,11 +394,11 @@ clean_structural_data <- function(data){
   
   # mortality
   
-  data.clean$mortality <- data$tree %>% 
+  data.clean$mortality <- data$tree %>%
     select(treeid, status_new = status) %>%
-    inner_join(., 
-               tree.db %>% select(treeid, status_old = status), 
-               by = "treeid") %>% 
+    inner_join(.,
+               tree.db %>% select(treeid, status_old = status),
+               by = "treeid") %>%
     filter(status_old %in% c(1:4) & !status_new %in% c(1:4)) %>%
     left_join(., data$mortality, by = "treeid") %>%
     mutate(date = ifelse(date %in% NA, date.id, date),
@@ -370,18 +413,19 @@ clean_structural_data <- function(data){
   
   data.clean$tree <- data$tree %>%
     inner_join(., 
-               data.clean$plot %>% select(plotid, foresttype),
+               data$plot %>% select(plotid, foresttype),
                by = "plotid") %>%
     left_join(.,
               tree.db %>% select(treeid, old_x = x_m),
               by = "treeid") %>%
-    left_join(., 
+    left_join(.,
               data.clean$mortality %>% filter(mort_agent %in% c(111:113, 121:133, 141:143, 411:413)),
               by = c("date", "treeid")) %>%
     mutate(dbh_mm = ifelse(is.na(dbh_mm), 0, dbh_mm),
            distance_m = sqrt(abs(x_m^2 + y_m^2)) + dbh_mm/1000/2,
            dbh_mm = ifelse(dbh_mm %in% 0, NA, dbh_mm),
            onplot = case_when(
+             foresttype %in% "fraxinus" & distance_m <= 12.62 ~ 1,
              foresttype %in% "spruce" & distance_m <= 17.84 ~ 1,
              foresttype %in% "beech" & distance_m <= 7.99 ~ 1,
              foresttype %in% "beech" & distance_m > 7.99 & distance_m <= 17.84 ~ 2,
@@ -426,7 +470,7 @@ clean_structural_data <- function(data){
            y_m_diff = ifelse(!y_m.x %in% NA & !y_m.y %in% NA, abs(y_m.x - y_m.y), 0),
            diff_m = sqrt(x_m_diff^2 + y_m_diff^2),
            quality1 = ifelse(!species.x %in% species.y, 1, NA),
-           quality2 = case_when(  
+           quality2 = case_when(
              status.x %in% c(1:4) & !status.y %in% c(1:4, 99) ~ 2,
              status.x %in% c(1:4) & status.y %in% c(1:4) & status.x < status.y ~ 2,
              status.x %in% 0 & status.y %in% 10 ~ 2,
@@ -479,6 +523,22 @@ clean_structural_data <- function(data){
   # regeneration_subplot
 
   data.clean$regeneration_subplot <- distinct(data$regeneration_subplot, .keep_all = T)
+  
+  # soil
+  
+  data.clean$soil <- data$soil %>% distinct(., .keep_all = T) %>% 
+    group_by(date, plotid, sample, soil_horizon) %>% summarise(depth_cm = sum(depth_cm))
+  
+  # vegetation
+  
+  data.clean$vegetation <- data$vegetation %>%
+    mutate(gap_distance_m = NA) %>%
+    mutate_at(vars(vegetation_cover, vaccinium_myrtillus_cover, rubus_per, bryopsida_per, 
+                   polypodiopsida_per, poaceae_per, ericaceae_per, other_per), funs(round(., 0)))
+  
+  # habitat
+  
+  data.clean$habitat <- data$habitat
     
   return(data.clean)
   
@@ -860,9 +920,100 @@ read_data <- function(name){
                       return(data.df)
                       
                     } else {
-                  
-                  stop("Unknown name of the data file.")
-                  
+                      
+                      if(name == "vegetation"){
+                        
+                        vegetation.list <- list.files(pattern = "*_vegetation.csv", recursive = F)
+                        
+                        data.df <- tibble()
+                        
+                        for(i in vegetation.list){
+                          
+                          data.new <- read.table(i, sep = ";", header = T)
+                          
+                          data.new$vegetation.sampling_date <- as.POSIXct(strptime(data.new$vegetation.sampling_date,"%d.%m.%Y", tz = "UTC"))
+                          
+                          data.df <- bind_rows(data.df,
+                                               data.new %>%
+                                                 mutate(vegetation.date = as.numeric(vegetation.date),
+                                                        vegetation.plotid = as.character(vegetation.plotid),
+                                                        vegetation.large_gap = as.numeric(vegetation.large_gap),
+                                                        vegetation.gap_distance_m = as.numeric(vegetation.gap_distance_m),
+                                                        vegetation.vegetationht = as.numeric(vegetation.vegetationht),
+                                                        vegetation.vegetation_cover = as.numeric(vegetation.vegetation_cover),
+                                                        vegetation.vaccinium_myrtillus_cover = as.numeric(vegetation.vaccinium_myrtillus_cover),
+                                                        vegetation.rubus_per = as.numeric(vegetation.rubus_per),
+                                                        vegetation.bryopsida_per = as.numeric(vegetation.bryopsida_per),
+                                                        vegetation.polypodiopsida_per = as.numeric(vegetation.polypodiopsida_per),
+                                                        vegetation.poaceae_per = as.numeric(vegetation.poaceae_per),
+                                                        vegetation.ericaceae_per = as.numeric(vegetation.ericaceae_per),
+                                                        vegetation.other_per = as.numeric(vegetation.other_per),
+                                                        vegetation.biotope_quality = as.numeric(vegetation.biotope_quality),
+                                                        vegetation.biotope_trend = as.numeric(vegetation.biotope_trend),
+                                                        vegetation.large_herbivore_feces = as.numeric(vegetation.large_herbivore_feces)))
+                          
+                        }
+                        
+                        data.df <- rename_col(data.df)
+                        
+                        return(data.df)
+                        
+                      } else {
+                        
+                        if(name == "habitat"){
+                          
+                          habitat.list <- list.files(pattern = "*_habitat.csv", recursive = F)
+                          
+                          data.df <- tibble()
+                          
+                          for(i in habitat.list){
+                            
+                            data.df <- bind_rows(data.df,
+                                                 read.table(i, sep = ",", header = T, stringsAsFactors = F) %>%
+                                                   mutate(habitat.date = as.numeric(habitat.date),
+                                                          habitat.plotid = as.character(habitat.plotid),
+                                                          habitat.sampling_date = as.POSIXct(strptime(habitat.sampling_date,"%d.%m.%Y", tz = "UTC")),
+                                                          habitat.animal_species = as.character(habitat.animal_species),
+                                                          habitat.gender = as.numeric(habitat.gender),
+                                                          habitat.habitat_sign_type = as.numeric(habitat.habitat_sign_type)))
+                            
+                          }
+                          
+                          data.df <- rename_col(data.df)
+                          
+                          return(data.df)
+                          
+                        } else {
+                          
+                          if(name == "soil"){
+                            
+                            soil.list <- list.files(pattern = "*_soil.csv", recursive = F)
+                            
+                            data.df <- tibble()
+                            
+                            for(i in soil.list){
+                              
+                              data.df <- bind_rows(data.df,
+                                                   read.table(i, sep = ",", header = T, stringsAsFactors = F) %>%
+                                                     mutate(soil.date = as.numeric(soil.date),
+                                                            soil.plotid = as.character(soil.plotid),
+                                                            soil.sample = as.numeric(soil.sample),
+                                                            soil.soil_horizon = as.character(soil.soil_horizon),
+                                                            soil.depth_cm = as.numeric(soil.depth_cm)))
+                              
+                            }
+                            
+                            data.df <- rename_col(data.df)
+                            
+                            return(data.df)
+                            
+                          } else {
+                          
+                          stop("Unknown name of the data file.")
+                          
+                          }
+                        }
+                      } 
                     }
                   } 
                 }
@@ -890,7 +1041,8 @@ prepare_data <- function(name){
     
   } else {
     
-    if(name == "tree" | name == "deadwood" | name == "regeneration" | name == "regeneration_subplot" | name == "canopy_analysis") {
+    if(name == "tree" | name == "deadwood" | name == "regeneration" | name == "regeneration_subplot" |
+       name == "canopy_analysis" | name == "soil_profile" | name == "vegetation" | name == "habitat_signs") {
       
       id.max <- pull_id(name)
       
