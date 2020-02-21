@@ -225,6 +225,7 @@ check_structural_data <- function(data, fk) {
   error.list$P_plottype_change <- plot.check %>% filter(!plottype %in% plottype_old)
   error.list$P_foresttype <- data$plot %>% filter(!foresttype %in% fk$foresttype_fk)
   error.list$P_foresttype_change <- plot.check %>% filter(!foresttype %in% foresttype_old)
+  error.list$P_aspect <- data$plot %>% filter(!aspect %in% c(0:360))
   
   # tree
   
