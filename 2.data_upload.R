@@ -136,7 +136,7 @@ setwd("C:/Users/Ondrej_Vostarek/Downloads")
 #   colnames(can.data) <- can.names[1,]
 # 
 #   openxlsx::write.xlsx(x = can.data, file = paste0(substr(i, 1, nchar(i) - 7), "clean.xlsx"), row.names = F)
-#   
+#
 # }
 # 
 # ### The structure of the raw data needs to be checked and adjusted manually.
