@@ -212,19 +212,20 @@ check_structural_data <- function(data, fk) {
   error.list$P_date <- plot.check %>% filter(date <= date_old)
   error.list$P_census <- data$plot %>% filter(!census %in% fk$plot_census_fk)
   error.list$P_country <- data$plot %>% filter(!country %in% fk$country_fk)
-  error.list$P_country_change <- plot.check %>% filter(!country %in% country_old)
+  error.list$P_country_change <- plot.check %>% filter(country != country_old)
   error.list$P_location <- data$plot %>% filter(!location %in% fk$location_fk)
-  error.list$P_location_change <- plot.check %>% filter(!location %in% location_old)
-  error.list$P_stand <- plot.check %>% filter(!stand %in% stand_old)
-  error.list$P_standshort <- plot.check %>% filter(!standshort %in% B)
-  error.list$P_plot <- plot.check %>% filter(!plot_test %in% C)
-  error.list$P_subplot <- plot.check %>% filter(!subplot %in% D)
+  error.list$P_location_change <- plot.check %>% filter(location != location_old)
+  error.list$P_stand <- plot.check %>% filter(stand != stand_old)
+  error.list$P_standshort <- plot.check %>% filter(standshort != B)
+  error.list$P_plot <- plot.check %>% filter(plot_test != C)
+  error.list$P_subplot <- plot.check %>% filter(subplot != D)
   error.list$P_plotsize <- data$plot %>% filter(!plotsize %in% c(500, 1000, 1500))
   error.list$P_dbh_min <- data$plot %>% filter(!dbh_min %in% c(50, 60, 100))
   error.list$P_plottype <- data$plot %>% filter(!plottype %in% fk$plottype_fk)
-  error.list$P_plottype_change <- plot.check %>% filter(!plottype %in% plottype_old)
+  error.list$P_plottype_change <- plot.check %>% filter(plottype != plottype_old)
   error.list$P_foresttype <- data$plot %>% filter(!foresttype %in% fk$foresttype_fk)
-  error.list$P_foresttype_change <- plot.check %>% filter(!foresttype %in% foresttype_old)
+  error.list$P_foresttype_change <- plot.check %>% filter(foresttype != foresttype_old)
+  error.list$P_aspect <- data$plot %>% filter(!aspect %in% c(0:360))
   
   # tree
   
@@ -415,6 +416,9 @@ clean_structural_data <- function(data){
     inner_join(., 
                data$plot %>% select(plotid, foresttype),
                by = "plotid") %>%
+    inner_join(.,
+               plot.db %>% ungroup() %>% select(plotid, plotsize_old, dbh_min_old),
+               by = "plotid") %>%
     left_join(.,
               tree.db %>% select(treeid, old_x = x_m),
               by = "treeid") %>%
@@ -433,14 +437,19 @@ clean_structural_data <- function(data){
              distance_m %in% NA ~ 99,
              TRUE ~ 0),
            census = case_when(
-             !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[census %in% c(3, 6)] & distance_m > 12.62 ~ 3,
-             !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[census %in% c(3, 6)] & distance_m <= 12.62 & dbh_mm < 100 ~ 3,
-             !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[census %in% c(3, 6)] & distance_m <= 12.62 & dbh_mm >= 100 & dbh_mm <= 150 ~ 1,
-             !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[census %in% c(3, 6)] & distance_m <= 12.62 & dbh_mm > 150 ~ 2,
-             !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[census %in% c(3, 6)] & dbh_mm < 100 ~ 3,
-             !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[census %in% c(3, 6)] & dbh_mm >= 100 & dbh_mm <= 150 ~ 1,
-             !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[census %in% c(3, 6)] & dbh_mm > 150 ~ 2,
+             !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 500 & distance_m > 12.62 ~ 3,
+             !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 1000 & distance_m > 17.84 ~ 3,
+             !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 500 & distance_m <= 12.62 & dbh_mm < dbh_min_old ~ 3,
+             !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 1000 & distance_m <= 17.84 & dbh_mm < dbh_min_old ~ 3,
+             !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 500 & distance_m <= 12.62 & dbh_mm >= dbh_min_old & dbh_mm <= dbh_min_old + 50 ~ 1,
+             !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 1000 & distance_m <= 17.84 & dbh_mm >= dbh_min_old & dbh_mm <= dbh_min_old + 50 ~ 1,
+             !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 500 & distance_m <= 12.62 & dbh_mm > dbh_min_old + 50 ~ 2,
+             !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 1000 & distance_m <= 17.84 & dbh_mm > dbh_min_old + 50 ~ 2,
+             !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm < dbh_min_old ~ 3,
+             !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm >= dbh_min_old & dbh_mm <= dbh_min_old + 50 ~ 1,
+             !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm > dbh_min_old ~ 2,
              treeid %in% tree.db$treeid & is.na(old_x) ~ 3,
+             plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% 1] ~ 0,
              TRUE ~ 0),
            status = case_when(
              mort_agent %in% c(111:113) ~ 12,
@@ -460,7 +469,7 @@ clean_structural_data <- function(data){
     group_by(treeid) %>%
     arrange(desc(status)) %>%
     filter(row_number() == 1) %>%
-    select(-distance_m, -foresttype, -old_x, -mort_agent)
+    select(-distance_m, -foresttype, -old_x, -mort_agent, -plotsize_old, -dbh_min_old)
   
   # tree_quality
   
@@ -469,7 +478,7 @@ clean_structural_data <- function(data){
     mutate(x_m_diff = ifelse(!x_m.x %in% NA & !x_m.y %in% NA, abs(x_m.x - x_m.y), 0),
            y_m_diff = ifelse(!y_m.x %in% NA & !y_m.y %in% NA, abs(y_m.x - y_m.y), 0),
            diff_m = sqrt(x_m_diff^2 + y_m_diff^2),
-           quality1 = ifelse(!species.x %in% species.y, 1, NA),
+           quality1 = ifelse(species.x != species.y, 1, NA),
            quality2 = case_when(
              status.x %in% c(1:4) & !status.y %in% c(1:4, 99) ~ 2,
              status.x %in% c(1:4) & status.y %in% c(1:4) & status.x < status.y ~ 2,
@@ -490,7 +499,7 @@ clean_structural_data <- function(data){
            quality5 = case_when(
              decay.x %in% c(1:5) & decay.y %in% (1:5) & decay.x < decay.y ~ 5,
              decay.x %in% -1 & !decay.y %in% -1 ~ 5),
-           quality6 = ifelse(!onplot.x %in% onplot.y, 6, NA),
+           quality6 = ifelse(onplot.x != onplot.y, 6, NA),
            quality7 = ifelse(diff_m > 0.75, 7, NA),
            quality8 = ifelse(layer.x %in% c(11:13, 99) & layer.y %in% -1, 8, NA),
            quality9 = case_when(
@@ -499,7 +508,7 @@ clean_structural_data <- function(data){
            quality10 = case_when(
              status.x %in% 1 & height_m.x < height_m.y ~ 10,
              status.x %in% c(11, 15, 21) & height_m.x < height_m.y ~ 10),
-           quality11 = ifelse(!treetype.x %in% treetype.y, 11, NA)) %>%
+           quality11 = ifelse(treetype.x != treetype.y, 11, NA)) %>%
     select(date, treeid, quality1:quality11) %>%
     gather(., key, quality, quality1:quality11) %>%
     filter(!quality %in% NA) %>%
