@@ -494,7 +494,7 @@ clean_structural_data <- function(data){
              status.x %in% 15 & !status.y %in% c(1, 11, 99) ~ 2),
            quality3 = ifelse(growth.x %in% c(0, 1, 99) & growth.y %in% -1, 3, NA),
            quality4 = case_when(
-             dbh_mm.x < dbh_mm.y ~ 4,
+             status.x %in% c(1:4) & dbh_mm.x < dbh_mm.y ~ 4,
              !status.x %in% c(1:4) & !status.y %in% c(1:4) & dbh_mm.x > dbh_mm.y ~ 4),
            quality5 = case_when(
              decay.x %in% c(1:5) & decay.y %in% (1:5) & decay.x < decay.y ~ 5,
