@@ -112,6 +112,18 @@ data.raw$habitat <- habitat.df
 
 error.list <- check_structural_data(data = data.raw, fk = fk.list)
 
+## additional tree position check
+
+treePos.check <- data.raw$tree %>%
+  select(plotid, treeid, x_m, y_m) %>%
+  inner_join(., tree.db %>% select(treeid, x_m, y_m), by = "treeid") %>%
+  mutate(x_m_diff = ifelse(!x_m.x %in% NA & !x_m.y %in% NA, abs(x_m.x - x_m.y), 0),
+         y_m_diff = ifelse(!y_m.x %in% NA & !y_m.y %in% NA, abs(y_m.x - y_m.y), 0),
+         diff_m = sqrt(x_m_diff^2 + y_m_diff^2)) %>%
+  filter(diff_m > 0.75)
+
+### check the number of trees with position error per plot -> maps?
+
 ## correct data
 
 data.clean <- clean_structural_data(data = data.raw)
