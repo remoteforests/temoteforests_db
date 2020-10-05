@@ -70,6 +70,44 @@ tree.db <- tbl(KELuser, "tree") %>%
              by = c("plot_id" = "id")) %>% 
   collect()
 
+shp <- list.files("", # path to the directory
+                  pattern = 'TreesRem2019_point.dbf', recursive = T, full.names = T)
+
+tree.pos <- tibble()
+
+for(i in shp){
+  tree.pos <- bind_rows(
+    tree.pos,
+    sf::st_read(i, quiet = T) %>%
+      do({ x <- .
+      bind_cols(
+        select(as.tibble(x), plot_id = IDPLOTS, treeid = ID), # IDPLOTS - SLO / IDPlots
+        sf::st_coordinates(x) %>% as.tibble() %>% set_names(c("x", "y"))
+      ) %>%
+        mutate(filename = i)
+      })
+  )
+}
+
+data.raw$tree <- tbl(KELuser, "plot") %>% 
+  select(plot_id = id, plotid) %>% 
+  collect() %>%
+  right_join(., tree.pos, by = "plot_id") %>% 
+  mutate(treeid = as.character(treeid),
+         treeid = case_when(
+           nchar(treeid) == 1 ~ paste0("00", treeid),
+           nchar(treeid) == 2 ~ paste0("0", treeid),
+           nchar(treeid) == 3 ~ treeid),
+         treeid = paste(plotid, treeid, sep = "_")) %>%
+  select(treeid, x, y) %>%
+  right_join(., data.raw$tree, by = "treeid") %>%
+  mutate(x_m = x, y_m = y) %>%
+  select(-x, -y)
+
+### check the number of NAs in x_m, y_m
+
+data.raw$tree %>% filter(is.na(x_m))
+
 ## VEGETATION
 
 vegetation.file <- list.files(pattern = '_vegetation.csv')
