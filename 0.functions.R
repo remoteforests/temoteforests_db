@@ -321,8 +321,8 @@ check_structural_data <- function(data, fk) {
   error.list$V_biotope_quality <- data$vegetation %>% filter(!biotope_quality %in% fk$biotope_quality_fk)
   error.list$V_biotope_trend <- data$vegetation %>% filter(!biotope_trend %in% fk$biotope_trend_fk)
   error.list$V_vegetation_cover <- data$vegetation %>% 
-    mutate(cover = rubus_per + bryopsida_per + polypodiopsida_per + poaceae_per + ericaceae_per + other_per) %>%
-    filter(cover > vegetation_cover)
+    mutate(cover = vaccinium_myrtillus_cover + rubus_per + bryopsida_per + polypodiopsida_per + poaceae_per + ericaceae_per + other_per) %>%
+    filter(cover != vegetation_cover)
   
   # habitat
   
