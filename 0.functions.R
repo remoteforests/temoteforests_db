@@ -43,7 +43,7 @@ read_structural_data <- function(file){
   data.list$tree <- openxlsx::read.xlsx(paste0(file), sheet = 2)
   
   if(!identical(c("date", "plotid", "treeid",	"treen", "onplot", "treetype",
-                  "x_m",	"y_m",	"status", "census", "growth", "layer", "species",
+                  "x_m",	"y_m",	"status", "growth", "layer", "species",
                   "dbh_mm", "height_m", "crownht_m", "crowndiam1_m", "crowndiam2_m",
                   "decay", "decay_wood", "decayht"),
                 names(data.list$tree)))
@@ -60,7 +60,6 @@ read_structural_data <- function(file){
            x_m = as.numeric(x_m),
            y_m = as.numeric(y_m),
            status = as.numeric(status),
-           census = as.numeric(census),
            growth = as.numeric(growth),
            layer = as.numeric(layer),
            species = as.character(species),
