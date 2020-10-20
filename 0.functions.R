@@ -43,7 +43,7 @@ read_structural_data <- function(file){
   data.list$tree <- openxlsx::read.xlsx(paste0(file), sheet = 2)
   
   if(!identical(c("date", "plotid", "treeid",	"treen", "onplot", "treetype",
-                  "x_m",	"y_m",	"status", "census", "growth", "layer", "species",
+                  "x_m",	"y_m",	"status", "growth", "layer", "species",
                   "dbh_mm", "height_m", "crownht_m", "crowndiam1_m", "crowndiam2_m",
                   "decay", "decay_wood", "decayht"),
                 names(data.list$tree)))
@@ -60,7 +60,6 @@ read_structural_data <- function(file){
            x_m = as.numeric(x_m),
            y_m = as.numeric(y_m),
            status = as.numeric(status),
-           census = as.numeric(census),
            growth = as.numeric(growth),
            layer = as.numeric(layer),
            species = as.character(species),
@@ -321,8 +320,8 @@ check_structural_data <- function(data, fk) {
   error.list$V_biotope_quality <- data$vegetation %>% filter(!biotope_quality %in% fk$biotope_quality_fk)
   error.list$V_biotope_trend <- data$vegetation %>% filter(!biotope_trend %in% fk$biotope_trend_fk)
   error.list$V_vegetation_cover <- data$vegetation %>% 
-    mutate(cover = rubus_per + bryopsida_per + polypodiopsida_per + poaceae_per + ericaceae_per + other_per) %>%
-    filter(cover > vegetation_cover)
+    mutate(cover = vaccinium_myrtillus_cover + rubus_per + bryopsida_per + polypodiopsida_per + poaceae_per + ericaceae_per + other_per) %>%
+    filter(cover != vegetation_cover)
   
   # habitat
   
@@ -447,7 +446,7 @@ clean_structural_data <- function(data){
              !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 1000 & distance_m <= 17.84 & dbh_mm > dbh_min_old + 50 ~ 2,
              !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm < dbh_min_old ~ 3,
              !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm >= dbh_min_old & dbh_mm <= dbh_min_old + 50 ~ 1,
-             !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm > dbh_min_old ~ 2,
+             !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm > dbh_min_old + 50 ~ 2,
              treeid %in% tree.db$treeid & is.na(old_x) ~ 3,
              plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% 1] ~ 0,
              TRUE ~ 0),
