@@ -19,7 +19,7 @@ for (i in fk$tablename) {
 
 # STRUCTURAL DATA ---------------------------------------------------------
 
-setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2019/raw")
+setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2020/raw")
 
 # 1. reading --------------------------------------------------------------
 
@@ -58,7 +58,8 @@ plot.db <- tbl(KELuser, "plot") %>%
   group_by(plotid, lng_old, lat_old, plotsize_old, dbh_min_old) %>%
   summarise(n_pos = sum(n_pos),
             n_trees = n(),
-            coef_old = (n_pos/n_trees) * 100)
+            coef_old = (n_pos/n_trees) * 100) %>%
+  ungroup()
 
 tree.db <- tbl(KELuser, "tree") %>% 
   inner_join(., 
@@ -70,7 +71,7 @@ tree.db <- tbl(KELuser, "tree") %>%
              by = c("plot_id" = "id")) %>% 
   collect()
 
-shp <- list.files("", # path to the directory
+shp <- list.files("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2020/positions/trees", # path to the directory
                   pattern = 'TreesRem2019_point.dbf', recursive = T, full.names = T)
 
 tree.pos <- tibble()
@@ -147,28 +148,71 @@ data.raw$habitat <- habitat.df
 ## check data
 
 ### 'plottype' in PLOT needs to be checked/edited manually
+### vegetation_cover can't be higher thant sum of individual species covers & can't be lower than the maximal individual species cover
 
 error.list <- check_structural_data(data = data.raw, fk = fk.list)
 
 ## additional tree position check
 
-treePos.check <- data.raw$tree %>%
+p.check <- data.raw$tree %>%
   select(plotid, treeid, x_m, y_m) %>%
-  inner_join(., tree.db %>% select(treeid, x_m, y_m), by = "treeid") %>%
+  left_join(., tree.db %>% select(plotid, treeid, x_m, y_m), by = c("plotid", "treeid")) %>%
   mutate(x_m_diff = ifelse(!x_m.x %in% NA & !x_m.y %in% NA, abs(x_m.x - x_m.y), 0),
          y_m_diff = ifelse(!y_m.x %in% NA & !y_m.y %in% NA, abs(y_m.x - y_m.y), 0),
          diff_m = sqrt(x_m_diff^2 + y_m_diff^2)) %>%
-  filter(diff_m > 0.75)
+  group_by(plotid) %>%
+  summarise(total = n(),
+            shift = length(treeid[diff_m > 0.75]),
+            sus = shift / total * 100) %>%
+  filter(sus > 33) %>%
+  pull(plotid)
 
-### check the number of trees with position error per plot -> maps?
+data.map <- tree.db %>% 
+  filter(plotid %in% p.check,
+         !is.na(x_m),
+         !treetype %in% c("m", "x", "t", "g")) %>%
+  select(date, plotid, treen, x_m, y_m, species, status, dbh_mm) %>%
+  bind_rows(., 
+            data.raw$tree %>% 
+              filter(plotid %in% p.check,
+                     !is.na(x_m),
+                     !treetype %in% c("m", "x", "t", "g")) %>%
+              select(date, plotid, treen, x_m, y_m, species, status, dbh_mm)
+            ) %>%
+  mutate( status = ifelse(status %in% c(1:4), 'alive', status),
+          status = ifelse(status %in% c(0, 10, 11:30), 'dead', status),
+          species = ifelse(!species %in% c("Abies alba",
+                                           "Picea abies",
+                                           "Fagus sylvatica",
+                                           "Acer pseudoplatanus",
+                                           "Acer",
+                                           "Betula pendula",
+                                           "Fraxinus excelsior",
+                                           "Salix caprea",
+                                           "Ulmus glabra",
+                                           "Corylus avellana"), 'Others', species),
+          status = as.factor(status),
+          species = as.factor(species)) %>%
+  arrange(plotid, date) %>%
+  mutate(plotid = paste(date, plotid, sep = "_"))
 
+pdf("treePosCheck.pdf", width = 9.2, height = 8, pointsize = 12, onefile = T)
+
+for( PL in unique(data.map$plotid)){
+  
+  print(plotTree(PL))
+  
+}
+
+dev.off()
+  
 ## correct data
 
 data.clean <- clean_structural_data(data = data.raw)
 
-### Check the effect of distinct() on MICROSITES, DEADWOOD, REGENERATION and REGENERATION_SUBPLOT!  
-
 # 3. exporting ------------------------------------------------------------
+
+setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2020/clean")
 
 for (i in names(data.clean)) {
 
