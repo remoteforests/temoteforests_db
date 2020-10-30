@@ -224,7 +224,7 @@ check_structural_data <- function(data, fk) {
   error.list$P_plottype_change <- plot.check %>% rowwise() %>% filter(!plottype %in% plottype_old)
   error.list$P_foresttype <- data$plot %>% filter(!foresttype %in% fk$foresttype_fk)
   error.list$P_foresttype_change <- plot.check %>% rowwise() %>% filter(!foresttype %in% foresttype_old)
-  error.list$P_aspect <- data$plot %>% filter(!aspect %in% c(0:360))
+  error.list$P_aspect <- data$plot %>% filter(!is.na(aspect) & !aspect %in% c(0:360))
   
   # tree
   
@@ -253,6 +253,7 @@ check_structural_data <- function(data, fk) {
   error.list$T_decayht <- data$tree %>% filter(!decayht %in% fk$decayheight_fk)
   error.list$T_decayht_alive <- data$tree %>% filter(status %in% c(1:4) & !decayht %in% -1)
   error.list$T_decayht_dead <- data$tree %>% filter(!status %in% c(1:4) & decayht %in% -1)
+  error.list$T_decayht_stump <- data$tree %>% filter(status %in% c(0, 10) & !decayht %in% 0)
   
   # mortality
   
@@ -276,6 +277,8 @@ check_structural_data <- function(data, fk) {
   error.list$Mi_not_in_tree <- anti_join(data$microsites, data$tree, by = c("date", "treeid"))
   error.list$Mi_microsite <- data$microsites %>% filter(!microsite %in% fk$microsite_fk)
   error.list$Mi_count <- data$microsites %>% filter(microsite %in% c(11, 20, 23, 25, 26, 29, 32:41, 44:47) & count > 1)
+  error.list$Mi_duplicates <- as.tibble(duplicated(data$microsites)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+    inner_join(., data$microsites %>% rownames_to_column("id"), by = "id")
   
   # deadwood
   
@@ -283,7 +286,10 @@ check_structural_data <- function(data, fk) {
   error.list$D_transect <- data$deadwood %>% filter(!transect %in% fk$transect_fk)
   error.list$D_species <- data$deadwood %>% filter(!species %in% fk$species_fk)
   error.list$D_dbh_mm <- data$deadwood %>% filter(dbh_mm %in% 0)
+  error.list$D_dbh_min <- data$deadwood %>% filter(dbh_mm < 60)
   error.list$D_decay <- data$deadwood %>% filter(!decay %in% fk$decay_wood_fk)
+  error.list$D_duplicates <- as.tibble(duplicated(data$deadwood)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+    inner_join(., data$deadwood %>% rownames_to_column("id"), by = "id")
   
   # regeneration
   
@@ -292,6 +298,8 @@ check_structural_data <- function(data, fk) {
   error.list$R_htclass <- data$regeneration %>% filter(!htclass %in% fk$htclass_fk)
   error.list$R_regeneratedon <- data$regeneration %>% filter(!regeneratedon %in% fk$regeneratedon_fk)
   error.list$R_count <- data$regeneration %>% filter(count %in% 0)
+  error.list$R_duplicates <- as.tibble(duplicated(data$regeneration)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+    inner_join(., data$regeneration %>% rownames_to_column("id"), by = "id")
   
   # regeneration_subplot
   
@@ -303,6 +311,8 @@ check_structural_data <- function(data, fk) {
   error.list$RS_browsing <- data$regeneration_subplot %>% filter(!browsing %in% fk$browsing_fk)
   error.list$RS_regeneratedon <- data$regeneration_subplot %>% filter(!regeneratedon %in% fk$regeneratedon_fk)
   error.list$RS_count <- data$regeneration_subplot %>% filter(count %in% 0)
+  error.list$RS_duplicates <- as.tibble(duplicated(data$regeneration_subplot)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+    inner_join(., data$regeneration_subplot %>% rownames_to_column("id"), by = "id")
   
   # soil
   
@@ -333,6 +343,60 @@ check_structural_data <- function(data, fk) {
   
   return(error.list)
   
+}
+
+circleFun <- function( r = 12.5 ){
+  #' @description Function to create the circle.
+  #' @return a data frame with x and y coordinate
+  #' @param r A radius of a sircle
+  
+  tt <- seq(0,2*pi,length.out = 100)
+  xx <- r * cos(tt)
+  yy <- r * sin(tt)
+  return(data.frame(X = xx, Y = yy))
+}
+
+plotTree <- function(PL){
+  #' @description For a unique plot id create a map with tree position, size, species
+  #' @param PL a unique name of the plot
+  #' @return a ggplot
+  #' 
+  
+  data.gg <- data.map %>% filter(plotid %in% PL)
+  
+  ggplot(data.gg) +
+    geom_point( aes(x_m, y_m, 
+                    size = dbh_mm, 
+                    color = species,
+                    shape = status))+
+    scale_shape_manual("Status",values = c("dead" = 17,
+                                           "alive" = 19,
+                                           "99" = 18),
+                       drop = FALSE) +
+    scale_color_manual("Species",values = c("Abies alba" = "darkgreen",
+                                            "Picea abies" = "lightgreen",
+                                            "Fagus sylvatica" = "lightblue",
+                                            "Acer pseudoplatanus" = "orange",
+                                            "Acer" = "pink",
+                                            "Betula pendula" = "violet",
+                                            "Fraxinus excelsior" = "turquoise",
+                                            "Salix caprea" = "brown",
+                                            "Ulmus glabra" = "yellow",
+                                            "Corylus avellana" = "darkblue",
+                                            "Others" = "grey"),
+                       drop = FALSE) +
+    scale_size_continuous("DBH (mm)", 
+                          limits = c(0,1400),
+                          breaks = c(0,200, 400, 600, 800, 1000, 1200, 1400),
+                          range = c(2,9)) +
+    geom_point( aes(0,0), shape = 3, color = "red",size = 3) +
+    geom_path(data = circleFun(r = 7.99), aes(x = X, y = Y), color = "black", size = 0.3)+
+    geom_path(data = circleFun(r = 12.62), aes(x = X, y = Y), color = "black", size = 0.3)+
+    geom_path(data = circleFun(r = 17.84), aes(x = X, y = Y), color = "black", size = 0.3)+
+    geom_path(data = circleFun(r = 21.85), aes(x = X, y = Y), color = "black", size = 0.3)+
+    theme_bw() +
+    geom_text( aes(x_m+0.5, y_m+0.5, label = treen), size = 3, color = "grey20")+
+    ggtitle(PL)
 }
 
 clean_structural_data <- function(data){
@@ -425,14 +489,15 @@ clean_structural_data <- function(data){
               data.clean$mortality %>% filter(mort_agent %in% c(111:113, 121:133, 141:143, 411:413)),
               by = c("date", "treeid")) %>%
     mutate(dbh_mm = ifelse(is.na(dbh_mm), 0, dbh_mm),
-           distance_m = sqrt(abs(x_m^2 + y_m^2)) + dbh_mm/1000/2,
+           dbh_half = dbh_mm/1000/2,
+           distance_m = sqrt(abs(x_m^2 + y_m^2)) + dbh_half,
            dbh_mm = ifelse(dbh_mm %in% 0, NA, dbh_mm),
            onplot = case_when(
-             foresttype %in% "fraxinus" & distance_m <= 12.62 ~ 1,
-             foresttype %in% "spruce" & distance_m <= 17.84 ~ 1,
+             foresttype %in% "fraxinus" & distance_m <= 12.62 + dbh_half ~ 1,
+             foresttype %in% "spruce" & distance_m <= 17.84 + dbh_half ~ 1,
              foresttype %in% "beech" & distance_m <= 7.99 ~ 1,
              foresttype %in% "beech" & distance_m > 7.99 & distance_m <= 17.84 ~ 2,
-             foresttype %in% "beech" & distance_m > 17.84 & distance_m <= 21.85 ~ 3,
+             foresttype %in% "beech" & distance_m > 17.84 & distance_m <= 21.85 + dbh_half ~ 3,
              distance_m %in% NA ~ 99,
              TRUE ~ 0),
            census = case_when(
@@ -503,7 +568,7 @@ clean_structural_data <- function(data){
            quality8 = ifelse(layer.x %in% c(11:13, 99) & layer.y %in% -1, 8, NA),
            quality9 = case_when(
              decayht.x %in% -1 & !decayht.y %in% -1 ~ 9,
-             decayht.x %in% c(1:5) & decayht.y %in% c(1:5) & decayht.x < decayht.y ~ 9),
+             decayht.x %in% c(0:5) & decayht.y %in% c(0:5) & decayht.x > decayht.y ~ 9),
            quality10 = case_when(
              status.x %in% 1 & height_m.x < height_m.y ~ 10,
              status.x %in% c(11, 15, 21) & height_m.x < height_m.y ~ 10),
