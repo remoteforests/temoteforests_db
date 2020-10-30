@@ -1002,14 +1002,11 @@ read_data <- function(name){
                         
                         for(i in vegetation.list){
                           
-                          data.new <- read.table(i, sep = ";", header = T)
-                          
-                          data.new$vegetation.sampling_date <- as.POSIXct(strptime(data.new$vegetation.sampling_date,"%d.%m.%Y", tz = "UTC"))
-                          
                           data.df <- bind_rows(data.df,
-                                               data.new %>%
+                                               read.table(i, sep = ",", header = T, stringsAsFactors = F) %>%
                                                  mutate(vegetation.date = as.numeric(vegetation.date),
                                                         vegetation.plotid = as.character(vegetation.plotid),
+                                                        vegetation.sampling_date = as.POSIXct(vegetation.sampling_date),
                                                         vegetation.large_gap = as.numeric(vegetation.large_gap),
                                                         vegetation.gap_distance_m = as.numeric(vegetation.gap_distance_m),
                                                         vegetation.vegetationht = as.numeric(vegetation.vegetationht),
@@ -1045,7 +1042,7 @@ read_data <- function(name){
                                                  read.table(i, sep = ",", header = T, stringsAsFactors = F) %>%
                                                    mutate(habitat.date = as.numeric(habitat.date),
                                                           habitat.plotid = as.character(habitat.plotid),
-                                                          habitat.sampling_date = as.POSIXct(strptime(habitat.sampling_date,"%d.%m.%Y", tz = "UTC")),
+                                                          habitat.sampling_date = as.POSIXct(habitat.sampling_date),
                                                           habitat.animal_species = as.character(habitat.animal_species),
                                                           habitat.gender = as.numeric(habitat.gender),
                                                           habitat.habitat_sign_type = as.numeric(habitat.habitat_sign_type)))
