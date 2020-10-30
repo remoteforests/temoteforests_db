@@ -9,7 +9,7 @@ data.list <- list()
 
 # STRUCTURAL DATA ---------------------------------------------------------
 
-setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2019/clean")
+setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2020/clean")
 
 # 1. reading --------------------------------------------------------------
 
@@ -21,9 +21,9 @@ data.list$tree_quality <- read_data("tree_quality")
 data.list$deadwood <- read_data("deadwood")
 data.list$regeneration <- read_data("regeneration")
 data.list$regeneration_subplot <- read_data("regeneration_subplot")
-data.list$soil_profile <- read_data("soil_profile")
+data.list$soil_profile <- read_data("soil")
 data.list$vegetation <- read_data("vegetation")
-data.list$habitat_signs <- read_data("habitat_signs")
+data.list$habitat_signs <- read_data("habitat")
 
 # 2. preparing & uploading ------------------------------------------------
 
