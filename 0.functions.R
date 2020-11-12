@@ -513,6 +513,7 @@ clean_structural_data <- function(data){
              !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm >= dbh_min_old & dbh_mm <= dbh_min_old + 50 ~ 1,
              !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm > dbh_min_old + 50 ~ 2,
              treeid %in% tree.db$treeid & is.na(old_x) ~ 3,
+             !treetype %in% "0" ~ 0,
              plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% 1] ~ 0,
              TRUE ~ 0),
            status = case_when(
