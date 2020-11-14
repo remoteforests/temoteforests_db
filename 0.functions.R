@@ -966,7 +966,8 @@ read_data <- function(name){
                                                     missing_mm = as.numeric(missing_mm),
                                                     missing_years = as.numeric(missing_years),
                                                     corestatus = as.numeric(corestatus),
-                                                    crossdated = as.numeric(crossdated)))
+                                                    crossdated = as.numeric(crossdated),
+                                                    coretype = as.numeric(coretype)))
                       
                     }
                     
