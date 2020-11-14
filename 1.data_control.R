@@ -259,7 +259,7 @@ error.list <- check_dendro_data(data = data.raw, fk = fk.list)
 
 data.clean <- list()
 
-data.clean$core <- data.raw$core %>% distinct(., .keep_all = T)
+data.clean$core <- data.raw$core %>% distinct(., .keep_all = T) %>% mutate(coretype = 1) # 2 - mortality cores
 data.clean$ring <- data.raw$ring %>% distinct(., .keep_all = T)
 
 # 3. exporting ------------------------------------------------------------
