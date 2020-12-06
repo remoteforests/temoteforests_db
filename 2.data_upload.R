@@ -83,6 +83,7 @@ upload_data("ring")
 data.list$dist_tree <- data.release$event
 data.list$dist_plot <- data.mds
 data.list$dist_plot_event <- data.peaks
+data.list$dist_stand <- dist.stand
 
 # 2. preparing & uploading ------------------------------------------------
 
@@ -103,6 +104,12 @@ upload_data("dist_plot")
 data.list$dist_plot_event <- prepare_data("dist_plot_event")
 
 upload_data("dist_plot_event")
+
+## dist_stand
+
+data.list$dist_stand <- prepare_data("dist_stand")
+
+upload_data("dist_stand")
 
 # PARAMETERS --------------------------------------------------------------
 

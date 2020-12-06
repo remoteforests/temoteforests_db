@@ -1265,9 +1265,23 @@ prepare_data <- function(name){
                       return(data.df)
                       
                     } else {
-                  
-                    stop("Unknown name of the data file.")
-                  
+                      
+                      if(name == "dist_stand"){
+                        
+                        id.max <- pull_id(name)
+                        
+                        data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>% 
+                          mutate(patch_area = round(patch_area, 4),
+                                 stand_size = round(stand_size, 4),
+                                 plotsprop_dist = round(plotsprop_dist, 4),
+                                 id = row_number() + id.max) %>%
+                          select(colorder(name))
+                        
+                      } else {
+                        
+                        stop("Unknown name of the data file.")
+                        
+                      }
                     }
                   }
                 }
