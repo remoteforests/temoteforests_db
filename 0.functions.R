@@ -247,6 +247,7 @@ check_structural_data <- function(data, fk) {
   error.list$T_decay <- data$tree %>% filter(!decay %in% fk$decay_fk)
   error.list$T_decay_alive <- data$tree %>% filter(status %in% c(1:4) & !decay %in% -1)
   error.list$T_decay_dead <- data$tree %>% filter(!status %in% c(1:4) & decay %in% -1)
+  error.list$T_decay_stump <- data$tree %>% filter(status %in% c(0, 10) & !decay %in% 5)
   error.list$T_decay_wood <- data$tree %>% filter(!decay_wood %in% fk$decay_wood_fk)
   error.list$T_decay_wood_alive <- data$tree %>% filter(status %in% c(1:4) & !decay_wood %in% -1)
   error.list$T_decay_wood_dead <- data$tree %>% filter(!status %in% c(1:4) & decay_wood %in% -1)
@@ -254,6 +255,8 @@ check_structural_data <- function(data, fk) {
   error.list$T_decayht_alive <- data$tree %>% filter(status %in% c(1:4) & !decayht %in% -1)
   error.list$T_decayht_dead <- data$tree %>% filter(!status %in% c(1:4) & decayht %in% -1)
   error.list$T_decayht_stump <- data$tree %>% filter(status %in% c(0, 10) & !decayht %in% 0)
+  error.list$T_decayht_decay <- data$tree %>% filter(decay %in% 5 & !decayht %in% 0)
+  
   
   # mortality
   
@@ -319,7 +322,10 @@ check_structural_data <- function(data, fk) {
   error.list$S_not_in_plot <- anti_join(data$soil, data$plot, by = c("date", "plotid"))
   error.list$S_sample <- data$soil %>% filter(!sample %in% c(1:5))
   error.list$S_soil_horizon <- data$soil %>% filter(!soil_horizon %in% fk$soil_horizon_fk)
-  error.list$S_depth_cm <- data$soil %>% filter(is.na(depth_cm))
+  error.list$S_bedrock <- data$soil %>% mutate(n = ifelse(soil_horizon %in% "R", 1, 0)) %>% 
+    group_by(date, plotid, sample) %>% summarise(n = sum(n)) %>% filter(!n %in% 1)
+  error.list$S_bedrock_depth <- data$soil %>% filter(soil_horizon %in% "R" & !depth_cm %in% c(-1, 0, 1))
+  error.list$S_depth_cm <- data$soil %>% filter(!soil_horizon %in% "R") %>% filter(depth_cm %in% c(NA, 0) | depth_cm < 0)
   
   # vegetation
   
