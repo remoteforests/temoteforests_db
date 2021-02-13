@@ -185,7 +185,8 @@ check_structural_data <- function(data, fk) {
   error.list <- list()
   
   plot.check <- tree.db %>%
-    select(date_old = date, plotid, country_old = country, location_old = location, stand_old = stand, plottype_old = plottype, foresttype_old = foresttype) %>%
+    select(date_old = date, plotid, country_old = country, location_old = location, stand_old = stand, plottype_old = plottype, 
+           foresttype_old = foresttype, lng_old = lng, lat_old = lat) %>%
     right_join(., data$plot, by = "plotid") %>%
     distinct(., .keep_all = TRUE) %>%
     mutate(plot_test = case_when(
@@ -218,6 +219,8 @@ check_structural_data <- function(data, fk) {
   error.list$P_standshort <- plot.check %>% rowwise() %>% filter(!standshort %in% B)
   error.list$P_plot <- plot.check %>% rowwise() %>% filter(!plot_test %in% C)
   error.list$P_subplot <- plot.check %>% rowwise() %>% filter(!subplot %in% D)
+  error.list$P_lng <- plot.check %>% rowwise() %>% filter(!lng %in% lng_old)
+  error.list$P_lat <- plot.check %>% rowwise() %>% filter(!lat %in% lat_old)
   error.list$P_plotsize <- data$plot %>% filter(!plotsize %in% c(500, 1000, 1500))
   error.list$P_dbh_min <- data$plot %>% filter(!dbh_min %in% c(50, 60, 100))
   error.list$P_plottype <- data$plot %>% filter(!plottype %in% fk$plottype_fk)
@@ -439,7 +442,7 @@ clean_structural_data <- function(data){
   
   library(tidyverse)
   
-  census <- data$plot %>%
+  data.clean$plot <- data$plot %>%
     select(date, plotid, plotsize) %>%
     inner_join(., data$tree %>% filter(!onplot %in% 0), by = c("date", "plotid")) %>%
     mutate(n_pos = ifelse(is.na(x_m), 0, 1)) %>%
@@ -455,12 +458,11 @@ clean_structural_data <- function(data){
       !is.na(plotsize_old) & plotsize < plotsize_old & coef_new >= 75 & coef_old >= 75 ~ 4,
       !is.na(plotsize_old) & plotsize %in% plotsize_old & (coef_new < 75 | coef_old < 75) ~ 5,
       !is.na(plotsize_old) & plotsize > plotsize_old & (coef_new < 75 | coef_old < 75) ~ 6,
-      !is.na(plotsize_old) & plotsize < plotsize_old & (coef_new < 75 | coef_old < 75) ~ 7))
-
-  data$plot$census <- census$census_new[data$plot$plotid %in% census$plotid]
-  
-  data.clean$plot <- data$plot %>% 
-    mutate(altitude_m = round(altitude_m, 0), slope = round(slope, 0), aspect = round(aspect, 0), ownership = 1)
+      !is.na(plotsize_old) & plotsize < plotsize_old & (coef_new < 75 | coef_old < 75) ~ 7)) %>%
+    select(plotid, census_new) %>%
+    right_join(., data$plot, by = "plotid") %>%
+    mutate(census = census_new, altitude_m = round(altitude_m, 0), slope = round(slope, 0), aspect = round(aspect, 0), ownership = 1) %>%
+    select(-census_new)
   
   # mortality
   
