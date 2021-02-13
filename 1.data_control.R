@@ -208,6 +208,8 @@ dev.off()
   
 ## correct data
 
+### double check plot census in case of any a priori exceptions
+
 data.clean <- clean_structural_data(data = data.raw)
 
 # 3. exporting ------------------------------------------------------------
