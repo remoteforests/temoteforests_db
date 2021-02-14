@@ -501,7 +501,7 @@ clean_structural_data <- function(data){
            distance_m = sqrt(abs(x_m^2 + y_m^2)) + dbh_half,
            dbh_mm = ifelse(dbh_mm %in% 0, NA, dbh_mm),
            onplot = case_when(
-             foresttype %in% "fraxinus" & distance_m <= 12.62 + dbh_half ~ 1,
+             foresttype %in% "thermophilic" & distance_m <= 12.62 + dbh_half ~ 1,
              foresttype %in% "spruce" & distance_m <= 17.84 + dbh_half ~ 1,
              foresttype %in% "beech" & distance_m <= 7.99 ~ 1,
              foresttype %in% "beech" & distance_m > 7.99 & distance_m <= 17.84 ~ 2,
