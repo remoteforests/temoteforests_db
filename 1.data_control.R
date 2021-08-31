@@ -19,7 +19,7 @@ for (i in fk$tablename) {
 
 # STRUCTURAL DATA ---------------------------------------------------------
 
-setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2020/raw")
+setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2021/raw")
 
 # 1. reading --------------------------------------------------------------
 
@@ -71,22 +71,43 @@ tree.db <- tbl(KELuser, "tree") %>%
              by = c("plot_id" = "id")) %>% 
   collect()
 
-shp <- list.files("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2020/positions/trees", # path to the directory
-                  pattern = 'TreesRem2019_point.dbf', recursive = T, full.names = T)
+# shp <- list.files("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2020/positions/trees", # path to the directory
+#                   pattern = 'TreesRem2019_point.dbf', recursive = T, full.names = T)
+# 
+# tree.pos <- tibble()
+# 
+# for(i in shp){
+#   tree.pos <- bind_rows(
+#     tree.pos,
+#     sf::st_read(i, quiet = T) %>%
+#       do({ x <- .
+#       bind_cols(
+#         select(as.tibble(x), plot_id = IDPLOTS, treeid = ID), # IDPLOTS - SLO / IDPlots
+#         sf::st_coordinates(x) %>% as.tibble() %>% set_names(c("x", "y"))
+#       ) %>%
+#         mutate(filename = i)
+#       })
+#   )
+# }
+
+fm.list <- list.files("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2021/fieldmap", # path to the directory
+                      pattern = 'FM*', recursive = F, full.names = T)
+
+fm.plotids <- openxlsx::read.xlsx("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2021/fieldmap/plotids2021.xlsx")
 
 tree.pos <- tibble()
 
-for(i in shp){
+for (FM in fm.list) {
+  
+  fm <- substr(FM, 66, nchar(FM) - 5)
+  
+  fmid <- fm.plotids %>% filter(project %in% fm) %>% pull(fmid)
+  
   tree.pos <- bind_rows(
     tree.pos,
-    sf::st_read(i, quiet = T) %>%
-      do({ x <- .
-      bind_cols(
-        select(as.tibble(x), plot_id = IDPLOTS, treeid = ID), # IDPLOTS - SLO / IDPlots
-        sf::st_coordinates(x) %>% as.tibble() %>% set_names(c("x", "y"))
-      ) %>%
-        mutate(filename = i)
-      })
+    openxlsx::read.xlsx(FM, sheet = "Trees_1") %>%
+      filter(IDPlots %in% fmid) %>%
+      select(plot_id = IDPlots, x = `X,m`, y = `Y,m`, treeid = ID)
   )
 }
 
