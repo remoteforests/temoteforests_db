@@ -339,8 +339,11 @@ check_structural_data <- function(data, fk) {
   error.list$V_biotope_quality <- data$vegetation %>% filter(!biotope_quality %in% fk$biotope_quality_fk)
   error.list$V_biotope_trend <- data$vegetation %>% filter(!biotope_trend %in% fk$biotope_trend_fk)
   error.list$V_vegetation_cover <- data$vegetation %>% 
-    mutate(cover = vaccinium_myrtillus_cover + rubus_per + bryopsida_per + polypodiopsida_per + poaceae_per + ericaceae_per + other_per) %>%
-    filter(cover != vegetation_cover)
+    mutate(cover = vaccinium_myrtillus_per + rubus_per + bryopsida_per + polypodiopsida_per + poaceae_per + ericaceae_per + other_per) %>%
+    gather(., family, value, vaccinium_myrtillus_per, rubus_per, bryopsida_per, polypodiopsida_per, poaceae_per, ericaceae_per, other_per) %>%
+    group_by(plotid, vegetation_cover, cover) %>%
+    summarise(value = max(value)) %>%
+    filter(vegetation_cover > cover | vegetation_cover < value)
   
   # habitat
   
@@ -615,7 +618,7 @@ clean_structural_data <- function(data){
   
   data.clean$vegetation <- data$vegetation %>%
     mutate(gap_distance_m = NA) %>%
-    mutate_at(vars(vegetation_cover, vaccinium_myrtillus_cover, rubus_per, bryopsida_per, 
+    mutate_at(vars(vegetation_cover, vaccinium_myrtillus_per, rubus_per, bryopsida_per, 
                    polypodiopsida_per, poaceae_per, ericaceae_per, other_per), funs(round(., 0)))
   
   # habitat
@@ -1021,7 +1024,7 @@ read_data <- function(name){
                                                         vegetation.gap_distance_m = as.numeric(vegetation.gap_distance_m),
                                                         vegetation.vegetationht = as.numeric(vegetation.vegetationht),
                                                         vegetation.vegetation_cover = as.numeric(vegetation.vegetation_cover),
-                                                        vegetation.vaccinium_myrtillus_cover = as.numeric(vegetation.vaccinium_myrtillus_cover),
+                                                        vegetation.vaccinium_myrtillus_per = as.numeric(vegetation.vaccinium_myrtillus_per),
                                                         vegetation.rubus_per = as.numeric(vegetation.rubus_per),
                                                         vegetation.bryopsida_per = as.numeric(vegetation.bryopsida_per),
                                                         vegetation.polypodiopsida_per = as.numeric(vegetation.polypodiopsida_per),
