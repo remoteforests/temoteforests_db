@@ -229,6 +229,7 @@ dev.off()
 ## correct data
 
 ### double check plot census in case of any a priori exceptions
+### double check tree census! (case_when() malfunctioning)
 
 data.clean <- clean_structural_data(data = data.raw)
 
