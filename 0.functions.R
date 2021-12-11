@@ -259,7 +259,7 @@ check_structural_data <- function(data, fk) {
   error.list$T_decayht_dead <- data$tree %>% filter(!status %in% c(1:4) & decayht %in% -1)
   error.list$T_decayht_stump <- data$tree %>% filter(status %in% c(0, 10) & !decayht %in% 0)
   error.list$T_decayht_decay <- data$tree %>% filter(decay %in% 5 & !decayht %in% 0)
-  
+  error.list$T_decayht_height <- data$tree %>% filter(!status %in% c(1:4) & !is.na(height_m))
   
   # mortality
   
@@ -547,7 +547,7 @@ clean_structural_data <- function(data){
     group_by(treeid) %>%
     arrange(desc(status)) %>%
     filter(row_number() == 1) %>%
-    select(-distance_m, -foresttype, -old_x, -mort_agent, -plotsize_old, -dbh_min_old)
+    select(-dbh_half, -distance_m, -foresttype, -old_x, -mort_agent, -plotsize_old, -dbh_min_old)
   
   # tree_quality
   
