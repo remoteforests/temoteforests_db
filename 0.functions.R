@@ -259,7 +259,7 @@ check_structural_data <- function(data, fk) {
   error.list$T_decayht_dead <- data$tree %>% filter(!status %in% c(1:4) & decayht %in% -1)
   error.list$T_decayht_stump <- data$tree %>% filter(status %in% c(0, 10) & !decayht %in% 0)
   error.list$T_decayht_decay <- data$tree %>% filter(decay %in% 5 & !decayht %in% 0)
-  
+  error.list$T_decayht_height <- data$tree %>% filter(!status %in% c(1:4) & !is.na(height_m))
   
   # mortality
   
@@ -339,8 +339,11 @@ check_structural_data <- function(data, fk) {
   error.list$V_biotope_quality <- data$vegetation %>% filter(!biotope_quality %in% fk$biotope_quality_fk)
   error.list$V_biotope_trend <- data$vegetation %>% filter(!biotope_trend %in% fk$biotope_trend_fk)
   error.list$V_vegetation_cover <- data$vegetation %>% 
-    mutate(cover = vaccinium_myrtillus_cover + rubus_per + bryopsida_per + polypodiopsida_per + poaceae_per + ericaceae_per + other_per) %>%
-    filter(cover != vegetation_cover)
+    mutate(cover = vaccinium_myrtillus_per + rubus_per + bryopsida_per + polypodiopsida_per + poaceae_per + ericaceae_per + other_per) %>%
+    gather(., family, value, vaccinium_myrtillus_per, rubus_per, bryopsida_per, polypodiopsida_per, poaceae_per, ericaceae_per, other_per) %>%
+    group_by(plotid, vegetation_cover, cover) %>%
+    summarise(value = max(value)) %>%
+    filter(vegetation_cover > cover | vegetation_cover < value)
   
   # habitat
   
@@ -509,8 +512,13 @@ clean_structural_data <- function(data){
              distance_m %in% NA ~ 99,
              TRUE ~ 0),
            census = case_when(
+             !treetype %in% "0" ~ 0,
+             plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% 1] ~ 0,
+             treeid %in% tree.db$treeid & is.na(old_x) ~ 3,
+             !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & is.na(distance_m) ~ 99,
              !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 500 & distance_m > 12.62 ~ 3,
              !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 1000 & distance_m > 17.84 ~ 3,
+             !treeid %in% tree.db$treeid & is.na(dbh_mm) ~ 99,
              !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 500 & distance_m <= 12.62 & dbh_mm < dbh_min_old ~ 3,
              !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 1000 & distance_m <= 17.84 & dbh_mm < dbh_min_old ~ 3,
              !treeid %in% tree.db$treeid & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 500 & distance_m <= 12.62 & dbh_mm >= dbh_min_old & dbh_mm <= dbh_min_old + 50 ~ 1,
@@ -520,9 +528,6 @@ clean_structural_data <- function(data){
              !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm < dbh_min_old ~ 3,
              !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm >= dbh_min_old & dbh_mm <= dbh_min_old + 50 ~ 1,
              !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm > dbh_min_old + 50 ~ 2,
-             treeid %in% tree.db$treeid & is.na(old_x) ~ 3,
-             !treetype %in% "0" ~ 0,
-             plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% 1] ~ 0,
              TRUE ~ 0),
            status = case_when(
              mort_agent %in% c(111:113) ~ 12,
@@ -542,7 +547,7 @@ clean_structural_data <- function(data){
     group_by(treeid) %>%
     arrange(desc(status)) %>%
     filter(row_number() == 1) %>%
-    select(-distance_m, -foresttype, -old_x, -mort_agent, -plotsize_old, -dbh_min_old)
+    select(-dbh_half, -distance_m, -foresttype, -old_x, -mort_agent, -plotsize_old, -dbh_min_old)
   
   # tree_quality
   
@@ -615,7 +620,7 @@ clean_structural_data <- function(data){
   
   data.clean$vegetation <- data$vegetation %>%
     mutate(gap_distance_m = NA) %>%
-    mutate_at(vars(vegetation_cover, vaccinium_myrtillus_cover, rubus_per, bryopsida_per, 
+    mutate_at(vars(vegetation_cover, vaccinium_myrtillus_per, rubus_per, bryopsida_per, 
                    polypodiopsida_per, poaceae_per, ericaceae_per, other_per), funs(round(., 0)))
   
   # habitat
@@ -1021,7 +1026,7 @@ read_data <- function(name){
                                                         vegetation.gap_distance_m = as.numeric(vegetation.gap_distance_m),
                                                         vegetation.vegetationht = as.numeric(vegetation.vegetationht),
                                                         vegetation.vegetation_cover = as.numeric(vegetation.vegetation_cover),
-                                                        vegetation.vaccinium_myrtillus_cover = as.numeric(vegetation.vaccinium_myrtillus_cover),
+                                                        vegetation.vaccinium_myrtillus_per = as.numeric(vegetation.vaccinium_myrtillus_per),
                                                         vegetation.rubus_per = as.numeric(vegetation.rubus_per),
                                                         vegetation.bryopsida_per = as.numeric(vegetation.bryopsida_per),
                                                         vegetation.polypodiopsida_per = as.numeric(vegetation.polypodiopsida_per),

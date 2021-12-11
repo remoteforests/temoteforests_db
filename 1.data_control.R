@@ -169,7 +169,6 @@ data.raw$habitat <- habitat.df
 ## check data
 
 ### 'plottype' in PLOT needs to be checked/edited manually
-### vegetation_cover can't be higher thant sum of individual species covers & can't be lower than the maximal individual species cover
 
 error.list <- check_structural_data(data = data.raw, fk = fk.list)
 
@@ -230,12 +229,13 @@ dev.off()
 ## correct data
 
 ### double check plot census in case of any a priori exceptions
+### double check tree census! (case_when() malfunctioning)
 
 data.clean <- clean_structural_data(data = data.raw)
 
 # 3. exporting ------------------------------------------------------------
 
-setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2020/clean")
+setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2021/clean")
 
 for (i in names(data.clean)) {
 
