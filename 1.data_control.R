@@ -123,7 +123,8 @@ data.raw$tree <- tbl(KELuser, "plot") %>%
          treeid = paste(plotid, treeid, sep = "_")) %>%
   select(treeid, x, y) %>%
   right_join(., data.raw$tree, by = "treeid") %>%
-  mutate(x_m = x, y_m = y) %>%
+  mutate(x_m = ifelse(is.na(x_m), x, x_m),
+         y_m = ifelse(is.na(y_m), y, y_m)) %>%
   select(-x, -y)
 
 ### check the number of NAs in x_m, y_m
