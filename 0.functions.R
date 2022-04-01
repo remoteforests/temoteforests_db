@@ -227,6 +227,7 @@ check_structural_data <- function(data, fk) {
   error.list$P_plottype_change <- plot.check %>% rowwise() %>% filter(!plottype %in% plottype_old)
   error.list$P_foresttype <- data$plot %>% filter(!foresttype %in% fk$foresttype_fk)
   error.list$P_foresttype_change <- plot.check %>% rowwise() %>% filter(!foresttype %in% foresttype_old)
+  error.list$P_slope <- data$plot %>% filter(!is.na(slope) & !slope %in% c(0:90))
   error.list$P_aspect <- data$plot %>% filter(!is.na(aspect) & !aspect %in% c(0:360))
   error.list$P_landform <- data$plot %>% filter(!landform %in% c(1:5, NA))
   error.list$P_hillform <- data$plot %>% filter(!hillform %in% c(1:3, NA))
