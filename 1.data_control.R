@@ -183,7 +183,7 @@ p.check <- data.raw$tree %>%
          diff_m = sqrt(x_m_diff^2 + y_m_diff^2)) %>%
   group_by(plotid) %>%
   summarise(total = n(),
-            shift = length(treeid[diff_m > 0.75]),
+            shift = length(treeid[diff_m > 0.5]),
             sus = shift / total * 100) %>%
   filter(sus > 33) %>%
   pull(plotid)
