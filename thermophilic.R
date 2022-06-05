@@ -315,17 +315,14 @@ clean_structural_data <- function(data){
     inner_join(., 
                data$plot %>% select(plotid, foresttype),
                by = "plotid") %>%
-    mutate(dbh_mm = ifelse(is.na(dbh_mm), 0, dbh_mm),
-           dbh_half = dbh_mm/1000/2,
-           distance_m = sqrt(abs(x_m^2 + y_m^2)) + dbh_half,
-           dbh_mm = ifelse(dbh_mm %in% 0, NA, dbh_mm),
+    mutate(distance_m = sqrt(abs(x_m^2 + y_m^2)),
            onplot = case_when(
-             foresttype %in% "thermophilic" & distance_m <= 12.62 + dbh_half ~ 1,
+             foresttype %in% "thermophilic" & distance_m <= 12.62 ~ 1,
              distance_m %in% NA ~ 99,
              TRUE ~ 0),
            census = 0) %>%
     group_by(treeid) %>%
-    select(-dbh_half, -distance_m, -foresttype)
+    select(-distance_m, -foresttype)
   
   # microsites
   

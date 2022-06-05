@@ -502,16 +502,13 @@ clean_structural_data <- function(data){
     left_join(.,
               data.clean$mortality %>% filter(mort_agent %in% c(111:113, 121:133, 141:143, 411:413)),
               by = c("date", "treeid")) %>%
-    mutate(dbh_mm = ifelse(is.na(dbh_mm), 0, dbh_mm),
-           dbh_half = dbh_mm/1000/2,
-           distance_m = sqrt(abs(x_m^2 + y_m^2)) + dbh_half,
-           dbh_mm = ifelse(dbh_mm %in% 0, NA, dbh_mm),
+    mutate(distance_m = sqrt(abs(x_m^2 + y_m^2)),
            onplot = case_when(
-             foresttype %in% "thermophilic" & distance_m <= 12.62 + dbh_half ~ 1,
-             foresttype %in% "spruce" & distance_m <= 17.84 + dbh_half ~ 1,
+             foresttype %in% "thermophilic" & distance_m <= 12.62 ~ 1,
+             foresttype %in% "spruce" & distance_m <= 17.84 ~ 1,
              foresttype %in% "beech" & distance_m <= 7.99 ~ 1,
              foresttype %in% "beech" & distance_m > 7.99 & distance_m <= 17.84 ~ 2,
-             foresttype %in% "beech" & distance_m > 17.84 & distance_m <= 21.85 + dbh_half ~ 3,
+             foresttype %in% "beech" & distance_m > 17.84 & distance_m <= 21.85 ~ 3,
              distance_m %in% NA ~ 99,
              TRUE ~ 0),
            census = case_when(
