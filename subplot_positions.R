@@ -6,10 +6,10 @@ source("pw.R")
 
 # 1. extract subplot positions --------------------------------------------
 
-fm.list <- list.files("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2021/fieldmap", # path to the directory
+fm.list <- list.files("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2022/fieldmap", # path to the directory
                       pattern = 'FM*', recursive = F, full.names = T)
 
-fm.plotids <- openxlsx::read.xlsx("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2021/fieldmap/plotids2021.xlsx")
+fm.plotids <- openxlsx::read.xlsx("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2022/fieldmap/plotids2022.xlsx")
 
 sub.pos <- tibble()
 
@@ -86,12 +86,12 @@ clean <- sub.pos %>%
   filter(n() >= 5) %>% # based on current data inspection during previous correction steps
   ungroup() %>%
   mutate(subplot_n = subplot_n - 1,
-         date = 2021) %>% # year when data were collected
+         date = 2022) %>% # year when data were collected
   inner_join(., fm.plotids, by = "fmid") %>%
   select(date, plotid, subplot_n, x_m, y_m) %>%
   arrange(date, plotid, subplot_n)
 
-write.table(clean, "2021_regSubplot_position.csv", sep = ",", row.names = F, na = "") 
+write.table(clean, "2022_regSubplot_position.csv", sep = ",", row.names = F, na = "") 
 
 # 4. upload data ----------------------------------------------------------
 
@@ -115,7 +115,7 @@ id.max <- pull_id("reg_subplot_position")
 
 plot_id <- tbl(KELuser, "plot") %>% select(date, plotid, plot_id = id) %>% collect()
 
-data.df <- read.table("2021_regSubplot_position.csv", sep = ",", header = T, stringsAsFactors = F) %>% 
+data.df <- read.table("2022_regSubplot_position.csv", sep = ",", header = T, stringsAsFactors = F) %>% 
   inner_join(., plot_id, by = c("date", "plotid")) %>% 
   mutate(id = row_number() + id.max) %>% 
   select(colorder("reg_subplot_position"))

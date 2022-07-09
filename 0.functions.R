@@ -547,7 +547,7 @@ clean_structural_data <- function(data){
     group_by(treeid) %>%
     arrange(desc(status)) %>%
     filter(row_number() == 1) %>%
-    select(-dbh_half, -distance_m, -foresttype, -old_x, -mort_agent, -plotsize_old, -dbh_min_old)
+    select(-distance_m, -foresttype, -old_x, -mort_agent, -plotsize_old, -dbh_min_old)
   
   # tree_quality
   

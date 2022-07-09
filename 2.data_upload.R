@@ -9,7 +9,7 @@ data.list <- list()
 
 # STRUCTURAL DATA ---------------------------------------------------------
 
-setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2021/clean")
+setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2022/clean")
 
 # 1. reading --------------------------------------------------------------
 
