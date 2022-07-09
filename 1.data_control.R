@@ -19,7 +19,7 @@ for (i in fk$tablename) {
 
 # STRUCTURAL DATA ---------------------------------------------------------
 
-setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2021/raw")
+setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2022/raw")
 
 # 1. reading --------------------------------------------------------------
 
@@ -90,10 +90,10 @@ tree.db <- tbl(KELuser, "tree") %>%
 #   )
 # }
 
-fm.list <- list.files("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2021/fieldmap", # path to the directory
+fm.list <- list.files("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2022/fieldmap", # path to the directory
                       pattern = 'FM*', recursive = F, full.names = T)
 
-fm.plotids <- openxlsx::read.xlsx("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2021/fieldmap/plotids2021.xlsx")
+fm.plotids <- openxlsx::read.xlsx("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2022/fieldmap/plotids2022.xlsx")
 
 tree.pos <- tibble()
 
@@ -236,7 +236,7 @@ data.clean <- clean_structural_data(data = data.raw)
 
 # 3. exporting ------------------------------------------------------------
 
-setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2021/clean")
+setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2022/clean")
 
 for (i in names(data.clean)) {
 
