@@ -235,6 +235,14 @@ check_structural_data <- function(data, fk) {
   # tree
   
   error.list$T_not_in_plot <- anti_join(data$tree, data$plot, by = c("date", "plotid"))
+  error.list$T_treen <- data$tree %>% mutate(treen = as.character(treen),
+                                             treen = case_when(
+                                               nchar(treen) == 1 ~ paste0("00", treen),
+                                               nchar(treen) == 2 ~ paste0("0", treen),
+                                               nchar(treen) == 3 ~ treen,
+                                               TRUE ~ treen),
+                                             n = substr(treeid, nchar(treeid) - 2 , nchar(treeid))) %>%
+    rowwise() %>% filter(!n %in% treen)
   error.list$T_onplot <- data$tree %>% filter(!onplot %in% fk$onplot_fk)
   error.list$T_treetype <- data$tree %>% filter(!treetype %in% fk$treetype_fk)
   error.list$T_treetype_onplot <- data$tree %>% filter(!onplot %in% 0 & !treetype %in% 0)
