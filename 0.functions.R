@@ -510,7 +510,7 @@ clean_structural_data <- function(data){
     left_join(.,
               data.clean$mortality %>% filter(mort_agent %in% c(111:113, 121:133, 141:143, 411:413)),
               by = c("date", "treeid")) %>%
-    mutate(distance_m = sqrt(abs(x_m^2 + y_m^2)),
+    mutate(distance_m = sqrt(abs(x_m^2) + abs(y_m^2)),
            onplot = case_when(
              foresttype %in% "thermophilic" & distance_m <= 12.62 ~ 1,
              foresttype %in% "spruce" & distance_m <= 17.84 ~ 1,
