@@ -315,7 +315,7 @@ clean_structural_data <- function(data){
     inner_join(., 
                data$plot %>% select(plotid, foresttype),
                by = "plotid") %>%
-    mutate(distance_m = sqrt(abs(x_m^2 + y_m^2)),
+    mutate(distance_m = sqrt(abs(x_m^2) + abs(y_m^2)),
            onplot = case_when(
              foresttype %in% "thermophilic" & distance_m <= 12.62 ~ 1,
              distance_m %in% NA ~ 99,
