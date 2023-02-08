@@ -80,7 +80,7 @@ upload_data("ring")
 
 # 1. reading --------------------------------------------------------------
 
-data.list$dist_tree <- data.release$event
+data.list$dist_tree <- data.event
 data.list$dist_plot <- data.mds
 data.list$dist_plot_event <- data.peaks
 data.list$dist_stand <- dist.stand

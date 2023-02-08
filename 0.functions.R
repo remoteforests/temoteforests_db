@@ -719,14 +719,6 @@ check_dendro_data <- function(data, fk) {
   
 }
 
-colorder <- function(name){
-  #'@description arrange columns of a data.frame in the same order as in the corresponding table in database 
-  #'@param name name of the database table
-  
-  tbl(KELuser, name) %>% colnames()
-  
-}
-
 movingSum <- function(x, windowLength = 11){
   #'@description calculate the moving sum of values
   #'@param x vector of numerical values
@@ -1121,6 +1113,33 @@ read_data <- function(name){
   }
 }
 
+pull_id <- function(name){
+  #' @description pull maximum id from database table
+  #' @param name name of database table from which maximum id should be pulled
+  
+  id <- tbl(KELuser, name) %>% summarise(id = max(id, na.rm = T)) %>% pull(id)
+  
+  if(is.na(id)){id <- 0}
+  
+  return(id)
+}
+
+rename_col <- function(x){
+  #' @description rename columns of dataframe created from list
+  #' @param x dataframe to rename
+  
+  names(x) <- gsub("^(.*)[:.:](.*)$", "\\2", names(x))
+  
+  return(x)
+}
+
+colorder <- function(name){
+  #'@description pull column names from database table 
+  #'@param name name of database table from which column names should be pulled
+  
+  tbl(KELuser, name) %>% colnames()
+}
+
 prepare_data <- function(name){
   #' @description prepare the data for uploading into the database
   #' @param name name of the database table into which the data should be uploaded
@@ -1189,8 +1208,7 @@ prepare_data <- function(name){
             id.max <- pull_id(name)
             
             data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
-              mutate(dbh_mm = round(dbh_mm, digits = 0), id = row_number() + id.max) %>% 
-              select(colorder(name))
+              mutate(id = row_number() + id.max) %>% select(colorder(name))
             
             return(data.df)
           
@@ -1318,35 +1336,21 @@ prepare_data <- function(name){
 }
 
 upload_data <- function(x){
-  #' @description upload the data into database
-  #' @param x string of names of the database tables into which the data should be uploaded
+  #' @description upload data into database
+  #' @param x string of names of database tables into which data should be uploaded
   
   for (i in x) {
     
     data.df <- as.data.frame(data.list[i]) %>% rename_col(.)
+    
+    n <- length(data.df$id)
     
     dbWriteTable(conn = KELadmin, 
                  name = i,
                  value = data.df,
                  overwrite = F, append = T, row.names = F)
     
+    print(paste(i, n, sep = ":"))
+    
   }
-}
-
-rename_col <- function(x){
-  #' @description rename columns
-  #' @param x data table to rename
-  
-  names(x) <- gsub("^(.*)[:.:](.*)$", "\\2", names(x))
-  
-  return(x)
-  
-}
-
-pull_id <- function(name){
-  #' @description pull the maximal id from a database table
-  #' @param name name of the database table from which the id should be pulled
-  
-  id <- tbl(KELuser, name) %>% filter(id == max(id, na.rm = TRUE)) %>% pull(id)
-  
 }
