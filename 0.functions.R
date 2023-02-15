@@ -719,21 +719,6 @@ check_dendro_data <- function(data, fk) {
   
 }
 
-movingSum <- function(x, windowLength = 11){
-  #'@description calculate the moving sum of values
-  #'@param x vector of numerical values
-  #'@param windowLength length of the moving window
-  
-  rollapply( x, 
-             width = windowLength,
-             FUN = sum,
-             fill = NA,
-             align = "center",
-             na.rm = T,
-             partial = TRUE)
-
-}
-
 read_data <- function(name){
   #' @description read the cleaned data from .csv
   #' @param name name of the database table into which the data should be uploaded
@@ -1218,49 +1203,31 @@ prepare_data <- function(name){
               
               id.max <- pull_id(name)
               
-              plot_id <- tbl(KELuser, "plot") %>% filter(census %in% 1) %>% 
+              plot.id <- tbl(KELuser, "plot") %>% filter(census %in% 1) %>% 
                 select(plotid, plot_id = id) %>% collect()
               
-              data.df <- as.data.frame(data.list[name]) %>% 
-                rename_col(.) %>%
-                separate(., 
-                         plotid, 
-                         c('foresttype','country', 'location', 'stand', 'plotid'), 
-                         sep = "/") %>%
-                inner_join(., plot_id, by = c("plotid")) %>%
-                group_by(plot_id) %>%
-                mutate(severity = movingSum(ca)) %>%
-                ungroup() %>%
-                mutate(ca = round(ca, digits = 2),
-                       value = round(value, digits = 5),
-                       id = row_number() + id.max) %>%
-                select(id, plot_id, year, ca_per = ca, kde = value, severity)
+              data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
+                inner_join(., plot.id, by = "plotid") %>% arrange(plotid, desc(type)) %>%
+                mutate(id = row_number() + id.max) %>% select(colorder(name))
                 
               return(data.df)
               
             } else {
               
-              if(name == "dist_plot_event"){
+              if(name == "dist_event"){
                 
                 id.max <- pull_id(name)
                 
-                event_id <- tbl(KELuser, "dist_plot") %>%
+                dist.chrono.id <- tbl(KELuser, "dist_chrono") %>%
+                  inner_join(., tbl(KELuser, "dist_plot"), by = c("dist_plot_id" = "id")) %>%
                   inner_join(., tbl(KELuser, "plot"), by = c("plot_id" = "id")) %>%
-                  select(dist_plot_id = id, plotid, year) %>%
+                  select(plotid, type, year, dist_chrono_id = id) %>%
                   collect()
                 
-                data.df <- as.data.frame(data.list[name]) %>%
-                  rename_col(.) %>%
-                  filter(method %in% "10_10_5") %>%
-                  separate(., 
-                           plotid,
-                           c('foresttype','country', 'location', 'stand', 'plotid'), 
-                           sep = "/") %>%
-                  left_join(., event_id, by = c("plotid", "year")) %>%
-                  mutate(method = 1,
-                         id = row_number() + id.max) %>%
-                  select(id, dist_plot_id, dist_plot_method_fk_id = method)
-                
+                data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
+                  inner_join(., dist.chrono.id, by = c("plotid", "type", "year")) %>% arrange(plotid, desc(type), year) %>%
+                  mutate(id = row_number() + id.max) %>% select(colorder(name))
+
                 return(data.df)
                 
               } else {
@@ -1320,8 +1287,23 @@ prepare_data <- function(name){
                         
                       } else {
                         
-                        stop("Unknown name of the data file.")
-                        
+                        if(name == "dist_chrono"){
+                          
+                          id.max <- pull_id(name)
+                          
+                          dist.plot.id <- tbl(KELuser, "dist_plot") %>%
+                            inner_join(., tbl(KELuser, "plot"), by = c("plot_id" = "id")) %>%
+                            select(plotid, type, dist_plot_id = id) %>% collect()
+                          
+                          data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
+                            inner_join(., dist.plot.id, by = c("plotid", "type")) %>% arrange(plotid, desc(type), year) %>%
+                            mutate(id = row_number() + id.max) %>% select(colorder(name))
+                          
+                        } else {
+                          
+                          stop("Unknown name of the data file.")
+                          
+                        }
                       }
                     }
                   }
