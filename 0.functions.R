@@ -719,29 +719,6 @@ check_dendro_data <- function(data, fk) {
   
 }
 
-colorder <- function(name){
-  #'@description arrange columns of a data.frame in the same order as in the corresponding table in database 
-  #'@param name name of the database table
-  
-  tbl(KELuser, name) %>% colnames()
-  
-}
-
-movingSum <- function(x, windowLength = 11){
-  #'@description calculate the moving sum of values
-  #'@param x vector of numerical values
-  #'@param windowLength length of the moving window
-  
-  rollapply( x, 
-             width = windowLength,
-             FUN = sum,
-             fill = NA,
-             align = "center",
-             na.rm = T,
-             partial = TRUE)
-
-}
-
 read_data <- function(name){
   #' @description read the cleaned data from .csv
   #' @param name name of the database table into which the data should be uploaded
@@ -1121,6 +1098,33 @@ read_data <- function(name){
   }
 }
 
+pull_id <- function(name){
+  #' @description pull maximum id from database table
+  #' @param name name of database table from which maximum id should be pulled
+  
+  id <- tbl(KELuser, name) %>% summarise(id = max(id, na.rm = T)) %>% pull(id)
+  
+  if(is.na(id)){id <- 0}
+  
+  return(id)
+}
+
+rename_col <- function(x){
+  #' @description rename columns of dataframe created from list
+  #' @param x dataframe to rename
+  
+  names(x) <- gsub("^(.*)[:.:](.*)$", "\\2", names(x))
+  
+  return(x)
+}
+
+colorder <- function(name){
+  #'@description pull column names from database table 
+  #'@param name name of database table from which column names should be pulled
+  
+  tbl(KELuser, name) %>% colnames()
+}
+
 prepare_data <- function(name){
   #' @description prepare the data for uploading into the database
   #' @param name name of the database table into which the data should be uploaded
@@ -1189,8 +1193,7 @@ prepare_data <- function(name){
             id.max <- pull_id(name)
             
             data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
-              mutate(dbh_mm = round(dbh_mm, digits = 0), id = row_number() + id.max) %>% 
-              select(colorder(name))
+              mutate(id = row_number() + id.max) %>% select(colorder(name))
             
             return(data.df)
           
@@ -1200,49 +1203,31 @@ prepare_data <- function(name){
               
               id.max <- pull_id(name)
               
-              plot_id <- tbl(KELuser, "plot") %>% filter(census %in% 1) %>% 
+              plot.id <- tbl(KELuser, "plot") %>% filter(census %in% 1) %>% 
                 select(plotid, plot_id = id) %>% collect()
               
-              data.df <- as.data.frame(data.list[name]) %>% 
-                rename_col(.) %>%
-                separate(., 
-                         plotid, 
-                         c('foresttype','country', 'location', 'stand', 'plotid'), 
-                         sep = "/") %>%
-                inner_join(., plot_id, by = c("plotid")) %>%
-                group_by(plot_id) %>%
-                mutate(severity = movingSum(ca)) %>%
-                ungroup() %>%
-                mutate(ca = round(ca, digits = 2),
-                       value = round(value, digits = 5),
-                       id = row_number() + id.max) %>%
-                select(id, plot_id, year, ca_per = ca, kde = value, severity)
+              data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
+                inner_join(., plot.id, by = "plotid") %>% arrange(plotid, desc(type)) %>%
+                mutate(id = row_number() + id.max) %>% select(colorder(name))
                 
               return(data.df)
               
             } else {
               
-              if(name == "dist_plot_event"){
+              if(name == "dist_event"){
                 
                 id.max <- pull_id(name)
                 
-                event_id <- tbl(KELuser, "dist_plot") %>%
+                dist.chrono.id <- tbl(KELuser, "dist_chrono") %>%
+                  inner_join(., tbl(KELuser, "dist_plot"), by = c("dist_plot_id" = "id")) %>%
                   inner_join(., tbl(KELuser, "plot"), by = c("plot_id" = "id")) %>%
-                  select(dist_plot_id = id, plotid, year) %>%
+                  select(plotid, type, year, dist_chrono_id = id) %>%
                   collect()
                 
-                data.df <- as.data.frame(data.list[name]) %>%
-                  rename_col(.) %>%
-                  filter(method %in% "10_10_5") %>%
-                  separate(., 
-                           plotid,
-                           c('foresttype','country', 'location', 'stand', 'plotid'), 
-                           sep = "/") %>%
-                  left_join(., event_id, by = c("plotid", "year")) %>%
-                  mutate(method = 1,
-                         id = row_number() + id.max) %>%
-                  select(id, dist_plot_id, dist_plot_method_fk_id = method)
-                
+                data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
+                  inner_join(., dist.chrono.id, by = c("plotid", "type", "year")) %>% arrange(plotid, desc(type), year) %>%
+                  mutate(id = row_number() + id.max) %>% select(colorder(name))
+
                 return(data.df)
                 
               } else {
@@ -1302,8 +1287,23 @@ prepare_data <- function(name){
                         
                       } else {
                         
-                        stop("Unknown name of the data file.")
-                        
+                        if(name == "dist_chrono"){
+                          
+                          id.max <- pull_id(name)
+                          
+                          dist.plot.id <- tbl(KELuser, "dist_plot") %>%
+                            inner_join(., tbl(KELuser, "plot"), by = c("plot_id" = "id")) %>%
+                            select(plotid, type, dist_plot_id = id) %>% collect()
+                          
+                          data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
+                            inner_join(., dist.plot.id, by = c("plotid", "type")) %>% arrange(plotid, desc(type), year) %>%
+                            mutate(id = row_number() + id.max) %>% select(colorder(name))
+                          
+                        } else {
+                          
+                          stop("Unknown name of the data file.")
+                          
+                        }
                       }
                     }
                   }
@@ -1318,35 +1318,21 @@ prepare_data <- function(name){
 }
 
 upload_data <- function(x){
-  #' @description upload the data into database
-  #' @param x string of names of the database tables into which the data should be uploaded
+  #' @description upload data into database
+  #' @param x string of names of database tables into which data should be uploaded
   
   for (i in x) {
     
     data.df <- as.data.frame(data.list[i]) %>% rename_col(.)
+    
+    n <- length(data.df$id)
     
     dbWriteTable(conn = KELadmin, 
                  name = i,
                  value = data.df,
                  overwrite = F, append = T, row.names = F)
     
+    print(paste(i, n, sep = ":"))
+    
   }
-}
-
-rename_col <- function(x){
-  #' @description rename columns
-  #' @param x data table to rename
-  
-  names(x) <- gsub("^(.*)[:.:](.*)$", "\\2", names(x))
-  
-  return(x)
-  
-}
-
-pull_id <- function(name){
-  #' @description pull the maximal id from a database table
-  #' @param name name of the database table from which the id should be pulled
-  
-  id <- tbl(KELuser, name) %>% filter(id == max(id, na.rm = TRUE)) %>% pull(id)
-  
 }

@@ -80,9 +80,10 @@ upload_data("ring")
 
 # 1. reading --------------------------------------------------------------
 
-data.list$dist_tree <- data.release$event
-data.list$dist_plot <- data.mds
-data.list$dist_plot_event <- data.peaks
+data.list$dist_tree <- data.event
+data.list$dist_plot <- data.kde.all %>% distinct(., plotid, type, year_min, year_max, ncores)
+data.list$dist_chrono <- data.kde.all %>% select(plotid, type, year, ca_pct, kde)
+data.list$dist_event <- data.peaks.all %>% select(plotid, type, year)
 data.list$dist_stand <- dist.stand
 
 # 2. preparing & uploading ------------------------------------------------
@@ -93,17 +94,23 @@ data.list$dist_tree <- prepare_data("dist_tree")
 
 upload_data("dist_tree")
 
-## plot_id
+## dist_plot
 
 data.list$dist_plot <- prepare_data("dist_plot")
 
 upload_data("dist_plot")
 
-## event_id
+## dist_chrono
 
-data.list$dist_plot_event <- prepare_data("dist_plot_event")
+data.list$dist_chrono <- prepare_data("dist_chrono")
 
-upload_data("dist_plot_event")
+upload_data("dist_chrono")
+
+## dist_event
+
+data.list$dist_event <- prepare_data("dist_event")
+
+upload_data("dist_event")
 
 ## dist_stand
 
@@ -115,7 +122,7 @@ upload_data("dist_stand")
 
 # 1. reading --------------------------------------------------------------
 
-data.list$parameters_plot <- data.all
+data.list$parameters_plot <- data.col
 
 # 2. preparing & uploading ------------------------------------------------
 
