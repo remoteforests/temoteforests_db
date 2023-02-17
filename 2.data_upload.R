@@ -122,7 +122,7 @@ upload_data("dist_stand")
 
 # 1. reading --------------------------------------------------------------
 
-data.list$parameters_plot <- data.all
+data.list$parameters_plot <- data.col
 
 # 2. preparing & uploading ------------------------------------------------
 
