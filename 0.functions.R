@@ -1278,12 +1278,9 @@ prepare_data <- function(name){
                         
                         id.max <- pull_id(name)
                         
-                        data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>% 
-                          mutate(patch_area = round(patch_area, 4),
-                                 stand_size = round(stand_size, 4),
-                                 plotsprop_dist = round(plotsprop_dist, 4),
-                                 id = row_number() + id.max) %>%
-                          select(colorder(name))
+                        data.df <- as.data.frame(data.list[name]) %>% rename_col(.) %>%
+                          arrange(stand, peakyear, npatch) %>%
+                          mutate(id = row_number() + id.max) %>% select(colorder(name))
                         
                       } else {
                         
