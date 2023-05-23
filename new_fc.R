@@ -258,7 +258,7 @@ check_structural_data <- function(data, fk) {
   error.list$P_aspect <- data$plot %>% filter(!aspect %in% c(0:360))
   error.list$P_landform <- data$plot %>% filter(!landform %in% c(1:5))
   error.list$P_hillform <- data$plot %>% filter(!hillform %in% c(1:3))
-  error.list$P_duplicates <- as.tibble(duplicated(data$plot)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+  error.list$P_duplicates <- as_tibble(duplicated(data$plot)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
     inner_join(., data$plot %>% rownames_to_column("id"), by = "id")
   error.list$P_ak <- data$plot %>% group_by(date, plotid) %>% filter(n() > 1)
   
@@ -282,7 +282,7 @@ check_structural_data <- function(data, fk) {
   error.list$T_decay_alive <- data$tree %>% filter(status %in% c(1:4) & !is.na(decay))
   error.list$T_decay_stump <- data$tree %>% filter(status %in% c(0, 10) & !decay %in% 5)
   error.list$T_forked <- data$tree %>% filter(!forked %in% c(0, 1))
-  error.list$T_duplicates <- as.tibble(duplicated(data$tree)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+  error.list$T_duplicates <- as_tibble(duplicated(data$tree)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
     inner_join(., data$tree %>% rownames_to_column("id"), by = "id")
   error.list$T_ak <- data$tree %>% group_by(date, plotid, treeid) %>% filter(n() > 1)
 
@@ -296,7 +296,7 @@ check_structural_data <- function(data, fk) {
     mutate(plotid = substr(treeid, 1, nchar(treeid) - 4)) %>%
     group_by(plotid, mort_agent) %>%
     filter((mort_agent %in% 0 & n() > 2) | (mort_agent %in% 51 & n() < 3))
-  error.list$Mo_duplicates <- as.tibble(duplicated(data$mortality)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+  error.list$Mo_duplicates <- as_tibble(duplicated(data$mortality)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
     inner_join(., data$mortality %>% rownames_to_column("id"), by = "id")
   error.list$Mo_ak <- data$mortality %>% group_by(date, treeid, mort_agent) %>% filter(n() > 1)
   
@@ -306,7 +306,7 @@ check_structural_data <- function(data, fk) {
   error.list$Mi_microsite <- data$microsites %>% filter(!microsite %in% fk$microsite_fk)
   error.list$Mi_count <- data$microsites %>% filter(is.na(count) | count < 1)
   error.list$Mi_countable <- data$microsites %>% filter(microsite %in% c(11, 20, 23, 25, 26, 29, 32:41, 44:47) & count > 1)
-  error.list$Mi_duplicates <- as.tibble(duplicated(data$microsites)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+  error.list$Mi_duplicates <- as_tibble(duplicated(data$microsites)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
     inner_join(., data$microsites %>% rownames_to_column("id"), by = "id")
   error.list$Mi_ak <- data$microsites %>% group_by(date, treeid, microsite) %>% filter(n() > 1)
   
@@ -319,7 +319,7 @@ check_structural_data <- function(data, fk) {
   error.list$D_dbh_mm <- data$deadwood %>% filter(is.na(dbh_mm) | dbh_mm < 1)
   error.list$D_dbh_min <- data$deadwood %>% filter(dbh_mm < 60)
   error.list$D_decay <- data$deadwood %>% filter(!decay %in% fk$decay_wood_fk)
-  error.list$D_duplicates <- as.tibble(duplicated(data$deadwood)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+  error.list$D_duplicates <- as_tibble(duplicated(data$deadwood)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
     inner_join(., data$deadwood %>% rownames_to_column("id"), by = "id")
   error.list$D_ak <- data$deadwood %>% group_by(date, plotid, transect, species, dbh_mm, decay) %>% filter(n() > 1)
   
@@ -330,7 +330,7 @@ check_structural_data <- function(data, fk) {
   error.list$R_htclass <- data$regeneration %>% filter(!htclass %in% fk$htclass_fk)
   error.list$R_regeneratedon <- data$regeneration %>% filter(!regeneratedon %in% fk$regeneratedon_fk)
   error.list$R_count <- data$regeneration %>% filter(is.na(count) | count < 1)
-  error.list$R_duplicates <- as.tibble(duplicated(data$regeneration)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+  error.list$R_duplicates <- as_tibble(duplicated(data$regeneration)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
     inner_join(., data$regeneration %>% rownames_to_column("id"), by = "id")
   error.list$R_ak <- data$regeneration %>% group_by(date, plotid, species, htclass, regeneratedon) %>% filter(n() > 1)
   
@@ -345,7 +345,7 @@ check_structural_data <- function(data, fk) {
   error.list$RS_browsing <- data$regeneration_subplot %>% filter(!browsing %in% fk$browsing_fk)
   error.list$RS_regeneratedon <- data$regeneration_subplot %>% filter(!regeneratedon %in% fk$regeneratedon_fk)
   error.list$RS_count <- data$regeneration_subplot %>% filter(is.na(count) | count < 1)
-  error.list$RS_duplicates <- as.tibble(duplicated(data$regeneration_subplot)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+  error.list$RS_duplicates <- as_tibble(duplicated(data$regeneration_subplot)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
     inner_join(., data$regeneration_subplot %>% rownames_to_column("id"), by = "id")
   error.list$RS_ak <- data$regeneration_subplot %>% group_by(date, plotid, subplot_n, species, htclass, regeneratedon, browsing) %>% filter(n() > 1)
   
@@ -358,7 +358,7 @@ check_structural_data <- function(data, fk) {
     group_by(date, plotid, sample) %>% summarise(n = sum(n)) %>% filter(!n %in% 1)
   error.list$S_bedrock_depth <- data$soil %>% filter(soil_horizon %in% "R" & !depth_cm %in% c(-1, 0, 1))
   error.list$S_depth_cm <- data$soil %>% filter(!soil_horizon %in% "R") %>% filter(is.na(depth_cm) | depth_cm <= 0)
-  error.list$S_duplicates <- as.tibble(duplicated(data$soil)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+  error.list$S_duplicates <- as_tibble(duplicated(data$soil)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
     inner_join(., data$soil %>% rownames_to_column("id"), by = "id")
   error.list$S_ak <- data$soil %>% group_by(date, plotid, sample, soil_horizon) %>% filter(n() > 1)
   
@@ -378,7 +378,7 @@ check_structural_data <- function(data, fk) {
   error.list$V_biotope_quality <- data$vegetation %>% filter(!biotope_quality %in% fk$biotope_quality_fk)
   error.list$V_biotope_trend <- data$vegetation %>% filter(!biotope_trend %in% fk$biotope_trend_fk)
   error.list$V_large_herbivore_feces <- data$vegetation %>% filter(large_herbivore_feces < 0)
-  error.list$V_duplicates <- as.tibble(duplicated(data$vegetation)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+  error.list$V_duplicates <- as_tibble(duplicated(data$vegetation)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
     inner_join(., data$vegetation %>% rownames_to_column("id"), by = "id")
   error.list$V_ak <- data$vegetation %>% group_by(date, plotid, sampling_date) %>% filter(n() > 1)
   
@@ -390,7 +390,7 @@ check_structural_data <- function(data, fk) {
   error.list$H_animal_species <- data$habitat %>% filter(!animal_species %in% fk$animal_species_fk)
   error.list$H_gender <- data$habitat %>% filter(!gender %in% fk$gender_fk)
   error.list$H_habitat_sign_type <- data$habitat %>% filter(!habitat_sign_type %in% fk$habitat_sign_type_fk)
-  error.list$H_duplicates <- as.tibble(duplicated(data$habitat)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+  error.list$H_duplicates <- as_tibble(duplicated(data$habitat)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
     inner_join(., data$habitat %>% rownames_to_column("id"), by = "id")
   error.list$H_ak <- data$habitat %>% group_by(date, plotid, sampling_date, animal_species, gender, habitat_sign_type) %>% filter(n() > 1)
   
