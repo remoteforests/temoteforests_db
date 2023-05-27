@@ -396,3 +396,55 @@ check_structural_data <- function(data, fk) {
   
   return(error.list)
 }
+
+circleFun <- function(r){
+  #' @description create circle with X and Y coordinates
+  #' @param r circle radius
+  
+  tt <- seq(0, 2 * pi, length.out = 100)
+  xx <- r * cos(tt)
+  yy <- r * sin(tt)
+  
+  return(data.frame(X = xx, Y = yy))
+}
+
+plotTree <- function(PL){
+  #' @description create plot map with tree position, size, status, and species
+  #' @param PL unique plotid
+
+  data.gg <- data.map %>% filter(plotid %in% PL)
+  
+  ggplot(data.gg) +
+    geom_point(aes(x_m, y_m, 
+                   size = dbh_mm, 
+                   shape = status,
+                   color = species)) +
+    scale_size_continuous("DBH (mm)", 
+                          limits = c(0, 1400),
+                          breaks = c(0, 200, 400, 600, 800, 1000, 1200, 1400),
+                          range = c(2, 9)) +
+    scale_shape_manual("Status", values = c("dead" = 17,
+                                            "alive" = 19,
+                                            "99" = 18),
+                       drop = FALSE) +
+    scale_color_manual("Species", values = c("Abies alba" = "darkgreen",
+                                             "Picea abies" = "lightgreen",
+                                             "Fagus sylvatica" = "lightblue",
+                                             "Acer pseudoplatanus" = "orange",
+                                             "Acer" = "pink",
+                                             "Betula pendula" = "violet",
+                                             "Fraxinus excelsior" = "turquoise",
+                                             "Salix caprea" = "brown",
+                                             "Ulmus glabra" = "yellow",
+                                             "Corylus avellana" = "darkblue",
+                                             "Others" = "grey"),
+                       drop = FALSE) +
+    geom_point(aes(0, 0), shape = 3, color = "red", size = 3) +
+    geom_path(data = circleFun(r = 7.99), aes(x = X, y = Y), color = "black", size = 0.3) +
+    geom_path(data = circleFun(r = 12.62), aes(x = X, y = Y), color = "black", size = 0.3) +
+    geom_path(data = circleFun(r = 17.84), aes(x = X, y = Y), color = "black", size = 0.3) +
+    geom_path(data = circleFun(r = 21.85), aes(x = X, y = Y), color = "black", size = 0.3) +
+    theme_bw() +
+    geom_text(aes(x_m + 0.5, y_m + 0.5, label = treen), size = 3, color = "grey20") +
+    ggtitle(PL)
+}

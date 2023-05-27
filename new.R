@@ -95,12 +95,18 @@ error.list <- check_structural_data(data = data.raw, fk = fk.list)
 
 ## additional tree position check
 
-p.check <- data.raw$tree %>%
-  select(plotid, treeid, x_m, y_m) %>%
-  left_join(., tree.db %>% select(plotid, treeid, x_m, y_m), by = c("plotid", "treeid")) %>%
-  mutate(x_m_diff = ifelse(!x_m.x %in% NA & !x_m.y %in% NA, abs(x_m.x - x_m.y), 0),
-         y_m_diff = ifelse(!y_m.x %in% NA & !y_m.y %in% NA, abs(y_m.x - y_m.y), 0),
-         diff_m = sqrt(x_m_diff^2 + y_m_diff^2)) %>%
+p.check <- tbl(KELuser, "tree") %>%
+  inner_join(., tbl(KELuser, "plot") %>% 
+               filter(plotid %in% local(unique(data.raw$plot$plotid)) & !date %in% local(unique(data.raw$plot$date))) %>% 
+               arrange(plotid, desc(date)) %>%
+               group_by(plotid) %>%
+               filter(row_number() == 1) %>%
+               ungroup(),
+             by = c("plot_id" = "id")) %>%
+  select(treeid, x_m, y_m) %>%
+  collect() %>%
+  inner_join(., data.raw$tree %>% select(plotid, treeid, x_m, y_m), by = "treeid") %>%
+  mutate(diff_m = sqrt(abs(x_m.x - x_m.y)^2 + abs(y_m.x - y_m.y)^2)) %>%
   group_by(plotid) %>%
   summarise(total = n(),
             shift = length(treeid[diff_m > 0.5]),
@@ -108,46 +114,46 @@ p.check <- data.raw$tree %>%
   filter(sus > 33) %>%
   pull(plotid)
 
-data.map <- tree.db %>% 
-  filter(plotid %in% p.check,
-         !is.na(x_m),
-         !treetype %in% c("m", "x", "t", "g")) %>%
+data.map <- tbl(KELuser, "tree") %>%
+  inner_join(., tbl(KELuser, "plot") %>% 
+               filter(plotid %in% p.check & !date %in% local(unique(data.raw$plot$date))) %>%
+               arrange(plotid, desc(date)) %>%
+               group_by(plotid) %>%
+               filter(row_number() == 1) %>%
+               ungroup(),
+             by = c("plot_id" = "id")) %>%
+  filter(!is.na(x_m), !is.na(y_m),
+         !treetype %in% c("m", "x", "t", "g", "r")) %>%
   select(date, plotid, treen, x_m, y_m, species, status, dbh_mm) %>%
-  bind_rows(., 
-            data.raw$tree %>% 
-              filter(plotid %in% p.check,
-                     !is.na(x_m),
-                     !treetype %in% c("m", "x", "t", "g")) %>%
-              select(date, plotid, treen, x_m, y_m, species, status, dbh_mm)
-  ) %>%
-  mutate( status = ifelse(status %in% c(1:4), 'alive', status),
-          status = ifelse(status %in% c(0, 10, 11:30), 'dead', status),
-          species = ifelse(!species %in% c("Abies alba",
-                                           "Picea abies",
-                                           "Fagus sylvatica",
-                                           "Acer pseudoplatanus",
-                                           "Acer",
-                                           "Betula pendula",
-                                           "Fraxinus excelsior",
-                                           "Salix caprea",
-                                           "Ulmus glabra",
-                                           "Corylus avellana"), 'Others', species),
-          status = as.factor(status),
-          species = as.factor(species)) %>%
+  collect() %>%
+  bind_rows(., data.raw$tree %>% filter(plotid %in% p.check) %>%
+              select(date, plotid, treen, x_m, y_m, species, status, dbh_mm)) %>%
+  mutate(status = ifelse(status %in% c(1:4), "alive", status),
+         status = ifelse(status %in% c(0, 10:23), "dead", status),
+         species = ifelse(!species %in% c("Abies alba",
+                                          "Picea abies",
+                                          "Fagus sylvatica",
+                                          "Acer pseudoplatanus",
+                                          "Acer",
+                                          "Betula pendula",
+                                          "Fraxinus excelsior",
+                                          "Salix caprea",
+                                          "Ulmus glabra",
+                                          "Corylus avellana"), "Others", species),
+         status = as.factor(status),
+         species = as.factor(species)) %>%
   arrange(plotid, date) %>%
-  mutate(plotid = paste(date, plotid, sep = "_"))
+  unite(., plotid, c(date, plotid), sep = "-")
 
 pdf("treePosCheck.pdf", width = 9.2, height = 8, pointsize = 12, onefile = T)
 
-for( PL in unique(data.map$plotid)){
+for(PL in unique(data.map$plotid)){
   
   print(plotTree(PL))
   
 }
 
 dev.off()
-
-## check all data for switched tree positions!
 
 # 3. clean ----------------------------------------------------------------
 
