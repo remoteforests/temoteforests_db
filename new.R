@@ -157,20 +157,24 @@ dev.off()
 
 # 3. clean ----------------------------------------------------------------
 
-## 'plottype' in PLOT needs to be checked/edited manually
+## 'plottype' & 'dbh_min' needs to be checked/edited manually
+## plot 'census' too in case of exceptions (missing trees/positions)
 
-## double check plot census in case of any a priori exceptions
-## double check tree census! (case_when() malfunctioning)
+tbl(KELuser, "plot") %>%
+  filter(plotid %in% local(unique(data.raw$plot$plotid)) & !date %in% local(unique(data.raw$plot$date))) %>% 
+  arrange(plotid, desc(date)) %>%
+  group_by(plotid) %>%
+  filter(row_number() == 1) %>%
+  ungroup() %>%
+  distinct(., plottype, dbh_min, census, plotsize)
 
-## dbh_min
-
-ggplot(data$tree) + 
+ggplot(data.raw$tree) + 
   geom_histogram(aes(x = dbh_mm), binwidth = 1) + 
   scale_x_continuous(breaks = seq(0, 2000, 10)) + 
   theme_classic() + 
   theme(axis.text.x = element_text(angle = 90))
 
-treetype = 0,
+## double check tree census! (case_when() malfunctioning)
 
 data.clean <- clean_structural_data(data = data.raw)
 

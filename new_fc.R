@@ -334,7 +334,6 @@ check_structural_data <- function(data, fk) {
     inner_join(., data$regeneration %>% rownames_to_column("id"), by = "id")
   error.list$R_ak <- data$regeneration %>% group_by(date, plotid, species, htclass, regeneratedon) %>% filter(n() > 1)
   
-  
   # regeneration_subplot
   
   error.list$RS_not_in_plot <- anti_join(data$regeneration_subplot, data$plot, by = c("date", "plotid"))
@@ -447,4 +446,202 @@ plotTree <- function(PL){
     theme_bw() +
     geom_text(aes(x_m + 0.5, y_m + 0.5, label = treen), size = 3, color = "grey20") +
     ggtitle(PL)
+}
+
+clean_structural_data <- function(data){
+  #' @description clean and prepare structural data
+  #' @param data list of structural datasets (data.raw)
+  
+  data.clean <- list()
+  
+  # plot
+  
+  data.clean$plot <- tbl(KELuser, "plot") %>%
+    filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
+    arrange(plotid, desc(date)) %>%
+    group_by(plotid) %>%
+    filter(row_number() == 1) %>%
+    ungroup() %>%
+    select(plotid, country, location, stand, standshort, plot, subplot, lng, lat, plotsize_old = plotsize, dbh_min, plottype, foresttype, altitude_m, ownership) %>%
+    collect() %>%
+    right_join(., data$plot, by = "plotid") %>%
+    mutate(census = case_when(
+      !is.na(plotsize_old) & plotsize %in% plotsize_old  ~ 2,
+      !is.na(plotsize_old) & plotsize > plotsize_old ~ 3,
+      !is.na(plotsize_old) & plotsize < plotsize_old ~ 4)) %>%
+    select(-pid, -plotsize_old)
+  
+  # mortality
+  
+  data.clean$mortality <- tbl(KELuser, "tree") %>%
+    inner_join(., tbl(KELuser, "plot") %>% 
+                 filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
+                 arrange(plotid, desc(date)) %>%
+                 group_by(plotid) %>%
+                 filter(row_number() == 1) %>%
+                 ungroup(),
+               by = c("plot_id" = "id")) %>%
+    select(treeid, status_old = status) %>%
+    collect() %>%
+    inner_join(., data$tree %>% select(treeid, species, status_new = status), by = "treeid") %>%
+    filter(status_old %in% c(1:4) & !status_new %in% c(1:4)) %>%
+    left_join(., data$mortality, by = "treeid") %>%
+    mutate(date = ifelse(is.na(date), unique(data$plot$date), date),
+           mort_agent = ifelse(is.na(mort_agent), 99, mort_agent),
+           mort_agent = case_when(
+             mort_agent %in% 99 & status_new %in% c(21:23) & species %in% "Picea abies" ~ 411,
+             mort_agent %in% 99 & status_new %in% 0 ~ 71,
+             mort_agent %in% 99 & status_new %in% 15 ~ 21,
+             TRUE ~ mort_agent)) %>%
+    select(date, treeid, mort_agent)
+  
+  # tree
+  
+  data.clean$tree <- tbl(KELuser, "tree") %>%
+    inner_join(., tbl(KELuser, "plot") %>% 
+                 filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
+                 arrange(plotid, desc(date)) %>%
+                 group_by(plotid) %>%
+                 filter(row_number() == 1) %>%
+                 ungroup(),
+               by = c("plot_id" = "id")) %>%
+    select(treeid, old_treen = treen, old_x = x_m) %>%
+    collect() %>%
+    right_join(., data$tree, by = "treeid") %>%
+    inner_join(., data.clean$plot %>% select(plotid, plotsize, foresttype), by = "plotid") %>%
+    inner_join(., tbl(KELuser, "plot") %>%
+                 filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
+                 arrange(plotid, desc(date)) %>%
+                 group_by(plotid) %>%
+                 filter(row_number() == 1) %>%
+                 ungroup() %>%
+                 select(plotid, plotsize_old = plotsize, dbh_min_old = dbh_min) %>%
+                 collect(),
+               by = "plotid") %>%
+    mutate(treen = as.character(as.numeric(treen)),
+           distance_m = sqrt(abs(x_m^2) + abs(y_m^2)),
+           onplot = case_when(
+             plotsize %in% 500 & distance_m <= 12.62 ~ 1,
+             plotsize %in% 1000 & foresttype %in% c("spruce", "managed") & distance_m <= 17.84 ~ 1,
+             plotsize %in% 1000 & foresttype %in% "beech" & distance_m <= 7.99 ~ 1,
+             plotsize %in% 1000 & foresttype %in% "beech" & distance_m > 7.99 & distance_m <= 17.84 ~ 2,
+             plotsize %in% 1500 & distance_m <= 7.99 ~ 1,
+             plotsize %in% 1500 & distance_m > 7.99 & distance_m <= 17.84 ~ 2,
+             plotsize %in% 1500 & distance_m > 17.84 & distance_m <= 21.85 ~ 3,
+             TRUE ~ 0),
+           treetype = "0",
+      census = case_when(
+             !treetype %in% "0" ~ 0,
+             plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% 1] ~ 0,
+             !is.na(old_treen) & is.na(old_x) ~ 3,
+             is.na(old_treen) & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & is.na(distance_m) ~ 99,
+             is.na(old_treen) & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 500 & distance_m > 12.62 ~ 3,
+             is.na(old_treen) & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 1000 & distance_m > 17.84 ~ 3,
+             is.na(old_treen) & is.na(dbh_mm) ~ 99,
+             is.na(old_treen) & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 500 & distance_m <= 12.62 & dbh_mm < dbh_min_old ~ 3,
+             is.na(old_treen) & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 1000 & distance_m <= 17.84 & dbh_mm < dbh_min_old ~ 3,
+             is.na(old_treen) & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 500 & distance_m <= 12.62 & dbh_mm >= dbh_min_old & dbh_mm <= dbh_min_old + 50 ~ 1,
+             is.na(old_treen) & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 1000 & distance_m <= 17.84 & dbh_mm >= dbh_min_old & dbh_mm <= dbh_min_old + 50 ~ 1,
+             is.na(old_treen) & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 500 & distance_m <= 12.62 & dbh_mm > dbh_min_old + 50 ~ 2,
+             is.na(old_treen) & plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & plotsize_old %in% 1000 & distance_m <= 17.84 & dbh_mm > dbh_min_old + 50 ~ 2,
+             is.na(old_treen) & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm < dbh_min_old ~ 3,
+             is.na(old_treen) & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm >= dbh_min_old & dbh_mm <= dbh_min_old + 50 ~ 1,
+             is.na(old_treen) & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm > dbh_min_old + 50 ~ 2,
+             TRUE ~ 0),
+      growth = ifelse(!status %in% c(1:4), -1, growth),
+      layer = ifelse(!status %in% c(1:4), -1, layer),
+      decay = ifelse(status %in% c(0, 10), 5, decay),
+      decay = ifelse(status %in% c(1:4), -1, decay),
+      decay_wood = ifelse(status %in% c(1:4), -1, decay_wood),
+      decayht = ifelse(status %in% c(0, 10) | decay %in% 5, 0, decayht),
+      decayht = ifelse(status %in% c(1:4), -1, decayht)) %>%
+    select(-old_treen, -old_x, -pid, -tid, -plotsize, -foresttype, -plotsize_old, -dbh_min_old, -distance_m)
+  
+  # tree_quality
+  
+  tree.db <- tbl(KELuser, "tree") %>%
+    inner_join(., tbl(KELuser, "plot") %>% 
+                 filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
+                 arrange(plotid, desc(date)) %>%
+                 group_by(plotid) %>%
+                 filter(row_number() == 1) %>%
+                 ungroup(),
+               by = c("plot_id" = "id")) %>%
+    select(treeid, onplot, treetype, x_m, y_m, status, growth, layer, species, dbh_mm, height_m, decay, decayht) %>%
+    collect()
+    
+  data.clean$tree_quality <- data.clean$tree %>%
+    inner_join(., tree.db, by = "treeid") %>%
+    mutate(x_m_diff = ifelse(!x_m.x %in% NA & !x_m.y %in% NA, abs(x_m.x - x_m.y), 0),
+           y_m_diff = ifelse(!y_m.x %in% NA & !y_m.y %in% NA, abs(y_m.x - y_m.y), 0),
+           diff_m = sqrt(x_m_diff^2 + y_m_diff^2),
+           quality1 = ifelse(species.x != species.y, 1, NA),
+           quality2 = case_when(
+             status.x %in% c(1:4) & !status.y %in% c(1:4, 99) ~ 2,
+             status.x %in% c(1:4) & status.y %in% c(1:4) & status.x < status.y ~ 2,
+             status.x %in% 0 & status.y %in% 10 ~ 2,
+             status.x %in% 10 & status.y %in% 0 ~ 2,
+             !status.x %in% c(0, 10) & status.y %in% c(0, 10) ~ 2, 
+             status.x %in% c(11:14) & status.y %in% c(11:14) & status.x < status.y ~ 2,
+             status.x %in% 15 & !status.y %in% c(1, 11, 99) ~ 2,
+             status.x %in% 11 & status.y %in% 15 ~ 2,
+             status.x %in% 16 & status.y %in% c(4, 14) ~ 2,
+             !status.x %in% c(0, 10, 16) & status.y %in% 16 ~ 2,
+             status.x %in% 17 & !status.y %in% c(1, 11, 17, 99) ~ 2,
+             status.x %in% 11 & status.y %in% 17 ~ 2,
+             status.x %in% c(21:23) & status.y %in% c(21:23) & status.x < status.y ~ 2,
+             status.x %in% c(21:23) & !status.y %in% c(1:4, 21:23) ~ 2),
+           quality3 = ifelse(growth.x %in% c(0, 1, 99) & growth.y %in% -1, 3, NA),
+           quality4 = case_when(
+             status.x %in% c(1:4) & dbh_mm.x < dbh_mm.y ~ 4,
+             !status.x %in% c(1:4) & !status.y %in% c(1:4) & dbh_mm.x > dbh_mm.y ~ 4),
+           quality5 = case_when(
+             decay.x %in% c(1:5) & decay.y %in% (1:5) & decay.x < decay.y ~ 5,
+             decay.x %in% -1 & !decay.y %in% -1 ~ 5),
+           quality6 = ifelse(onplot.x != onplot.y, 6, NA),
+           quality7 = ifelse(diff_m > 0.75, 7, NA),
+           quality8 = ifelse(layer.x %in% c(11:13, 99) & layer.y %in% -1, 8, NA),
+           quality9 = case_when(
+             decayht.x %in% -1 & !decayht.y %in% -1 ~ 9,
+             decayht.x %in% c(0:5) & decayht.y %in% c(0:5) & decayht.x > decayht.y ~ 9),
+           quality10 = case_when(
+             status.x %in% 1 & height_m.x < height_m.y ~ 10,
+             status.x %in% c(11, 15, 21) & height_m.x < height_m.y ~ 10),
+           quality11 = ifelse(treetype.x != treetype.y, 11, NA)) %>%
+    select(date, treeid, quality1:quality11) %>%
+    gather(., key, quality, quality1:quality11) %>%
+    filter(!quality %in% NA) %>%
+    select(-key)
+  
+  # microsites
+  
+  data.clean$microsites <- data$microsites %>% 
+    mutate(count = ifelse(microsite %in% c(11, 20, 23, 25, 26, 29, 32:41, 44:47), NA, count),
+           method = 2)
+  
+  # deadwood
+  
+  data.clean$deadwood <- data$deadwood
+  
+  # regeneration
+  
+  data.clean$regeneration <- data$regeneration
+  
+  # regeneration_subplot
+  
+  data.clean$regeneration_subplot <- data$regeneration_subplot
+  
+  # soil
+  
+  data.clean$soil <- data$soil
+  
+  # vegetation
+  
+  data.clean$vegetation <- data$vegetation %>% mutate(gap_distance_m = NA)
+  
+  # habitat
+  
+  data.clean$habitat <- data$habitat
+  
+  return(data.clean)
 }

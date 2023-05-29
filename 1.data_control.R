@@ -225,6 +225,8 @@ dev.off()
   
 ## correct data
 
+### check if tree status needs to be adjusted according to mort_agent (manually)
+
 ### double check plot census in case of any a priori exceptions
 ### double check tree census! (case_when() malfunctioning)
 

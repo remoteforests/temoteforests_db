@@ -281,6 +281,12 @@ check_structural_data <- function(data, fk) {
   # mortality
   
   error.list$Mo_not_in_tree <- anti_join(data$mortality, data$tree, by = c("date", "treeid"))
+  error.list$Mo_NA <- data$tree %>% select(treeid, status_new = status) %>%
+    inner_join(.,
+               tree.db %>% select(treeid, status_old = status),
+               by = "treeid") %>%
+    left_join(., data$mortality, by = "treeid") %>%
+    filter(status_old %in% c(1:4) & !status_new %in% c(1:4) & is.na(mort_agent))
   error.list$Mo_alive <- data$tree %>% filter(status %in% c(1:4)) %>% inner_join(., data$mortality, by = "treeid")
   error.list$Mo_dead <- data$tree %>% select(treeid, status_new = status) %>%
     inner_join(.,
@@ -504,25 +510,26 @@ clean_structural_data <- function(data){
   # mortality
   
   data.clean$mortality <- data$tree %>%
-    select(treeid, status_new = status) %>%
+    select(treeid, species, status_new = status) %>%
     inner_join(.,
                tree.db %>% select(treeid, status_old = status),
                by = "treeid") %>%
     filter(status_old %in% c(1:4) & !status_new %in% c(1:4)) %>%
     left_join(., data$mortality, by = "treeid") %>%
-    mutate(date = ifelse(date %in% NA, date.id, date),
-           mort_agent = ifelse(mort_agent %in% NA, 99, mort_agent),
+    mutate(date = ifelse(is.na(date), date.id, date),
+           mort_agent = ifelse(is.na(mort_agent), 99, mort_agent),
            mort_agent = case_when(
-             mort_agent %in% 99 & status_new %in% c(21:23) ~ 411,
+             mort_agent %in% 99 & status_new %in% c(21:23) & species %in% "Picea abies" ~ 411,
+             mort_agent %in% 99 & status_new %in% 0 ~ 71,
              mort_agent %in% 99 & status_new %in% 15 ~ 21,
              TRUE ~ mort_agent)) %>%
-    distinct(., date, treeid, mort_agent)
+    select(date, treeid, mort_agent)
   
   # tree
   
   data.clean$tree <- data$tree %>%
     inner_join(., 
-               data$plot %>% select(plotid, foresttype),
+               data$plot %>% select(plotid, plotsize, foresttype),
                by = "plotid") %>%
     inner_join(.,
                plot.db %>% ungroup() %>% select(plotid, plotsize_old, dbh_min_old),
@@ -530,16 +537,15 @@ clean_structural_data <- function(data){
     left_join(.,
               tree.db %>% select(treeid, old_x = x_m),
               by = "treeid") %>%
-    left_join(.,
-              data.clean$mortality %>% filter(mort_agent %in% c(111:113, 121:133, 141:143, 411:413)),
-              by = c("date", "treeid")) %>%
     mutate(distance_m = sqrt(abs(x_m^2) + abs(y_m^2)),
            onplot = case_when(
-             foresttype %in% "thermophilic" & distance_m <= 12.62 ~ 1,
-             foresttype %in% "spruce" & distance_m <= 17.84 ~ 1,
-             foresttype %in% "beech" & distance_m <= 7.99 ~ 1,
-             foresttype %in% "beech" & distance_m > 7.99 & distance_m <= 17.84 ~ 2,
-             foresttype %in% "beech" & distance_m > 17.84 & distance_m <= 21.85 ~ 3,
+             plotsize %in% 500 & distance_m <= 12.62 ~ 1,
+             plotsize %in% 1000 & foresttype %in% c("spruce", "managed") & distance_m <= 17.84 ~ 1,
+             plotsize %in% 1000 & foresttype %in% "beech" & distance_m <= 7.99 ~ 1,
+             plotsize %in% 1000 & foresttype %in% "beech" & distance_m > 7.99 & distance_m <= 17.84 ~ 2,
+             plotsize %in% 1500 & distance_m <= 7.99 ~ 1,
+             plotsize %in% 1500 & distance_m > 7.99 & distance_m <= 17.84 ~ 2,
+             plotsize %in% 1500 & distance_m > 17.84 & distance_m <= 21.85 ~ 3,
              distance_m %in% NA ~ 99,
              TRUE ~ 0),
            census = case_when(
@@ -559,26 +565,8 @@ clean_structural_data <- function(data){
              !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm < dbh_min_old ~ 3,
              !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm >= dbh_min_old & dbh_mm <= dbh_min_old + 50 ~ 1,
              !treeid %in% tree.db$treeid & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm > dbh_min_old + 50 ~ 2,
-             TRUE ~ 0),
-           status = case_when(
-             mort_agent %in% c(111:113) ~ 12,
-             mort_agent %in% c(121:133) ~ 13,
-             mort_agent %in% c(141:143) ~ 14,
-             mort_agent %in% 411 & status %in% 11 ~ 21,
-             mort_agent %in% 411 & status %in% 12 ~ 22,
-             mort_agent %in% 411 & status %in% 13 ~ 23,
-             mort_agent %in% 412 & status %in% 11 ~ 21,
-             mort_agent %in% 412 & status %in% 12 ~ 22,
-             mort_agent %in% 412 & status %in% 13 ~ 23,
-             mort_agent %in% 413 & status %in% 11 ~ 21,
-             mort_agent %in% 413 & status %in% 12 ~ 22,
-             mort_agent %in% 413 & status %in% 13 ~ 23,
-             mort_agent %in% 21 ~ 15,
-             TRUE ~ as.numeric(status))) %>%
-    group_by(treeid) %>%
-    arrange(desc(status)) %>%
-    filter(row_number() == 1) %>%
-    select(-distance_m, -foresttype, -old_x, -mort_agent, -plotsize_old, -dbh_min_old)
+             TRUE ~ 0)) %>%
+    select(-distance_m, -plotsize, -foresttype, -old_x, -plotsize_old, -dbh_min_old)
   
   # tree_quality
   
@@ -629,39 +617,33 @@ clean_structural_data <- function(data){
   
   data.clean$microsites <- data$microsites %>% 
     mutate(count = ifelse(microsite %in% c(11, 20, 23, 25, 26, 29, 32:41, 44:47), NA, count),
-           method = 2) %>%
-    distinct(., .keep_all = T)
+           method = 2)
   
   # deadwood
   
-  data.clean$deadwood <- distinct(data$deadwood, .keep_all = T)
+  data.clean$deadwood <- data$deadwood
   
   # regeneration
   
-  data.clean$regeneration <- distinct(data$regeneration, .keep_all = T)
+  data.clean$regeneration <- data$regeneration
 
   # regeneration_subplot
 
-  data.clean$regeneration_subplot <- distinct(data$regeneration_subplot, .keep_all = T)
+  data.clean$regeneration_subplot <- data$regeneration_subplot
   
   # soil
   
-  data.clean$soil <- data$soil %>% distinct(., .keep_all = T) %>% 
-    group_by(date, plotid, sample, soil_horizon) %>% summarise(depth_cm = sum(depth_cm))
+  data.clean$soil <- data$soil
   
   # vegetation
   
-  data.clean$vegetation <- data$vegetation %>%
-    mutate(gap_distance_m = NA) %>%
-    mutate_at(vars(vegetation_cover, vaccinium_myrtillus_per, rubus_per, bryopsida_per, 
-                   polypodiopsida_per, poaceae_per, ericaceae_per, other_per), funs(round(., 0)))
+  data.clean$vegetation <- data$vegetation %>% mutate(gap_distance_m = NA)
   
   # habitat
   
   data.clean$habitat <- data$habitat
     
   return(data.clean)
-  
 }
 
 read_dendro_data <- function(st){
