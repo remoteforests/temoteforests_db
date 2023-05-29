@@ -27,11 +27,34 @@ for (FM in fm.list) {
   )
 }
 
+## NEW
+
+fm.list <- list.files(path = "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2022/fieldmap/new", pattern = ".xlsx", full.names = T)
+
+sub.pos <- tibble()
+
+for (FM in fm.list) {
+  
+  pid <- openxlsx::read.xlsx(FM, sheet = "Plots") %>% filter(!EDIT_USER %in% "SYSTEM") %>%
+    inner_join(., openxlsx::read.xlsx(FM, sheet = "Trees") %>% filter(Measured %in% 1) %>%
+                 distinct(., IDPlots), by = c("ID" = "IDPlots")) %>% pull(ID)
+  
+  out <- inner_join(openxlsx::read.xlsx(FM, sheet = "Plots") %>% filter(ID %in% pid) %>% select(fmid = ID, plotid = Plotid),
+                    openxlsx::read.xlsx(FM, sheet = "RegRefPoints") %>% filter(IDPlots %in% pid) %>% select(fmid = IDPlots, subplot_n = ID, x_m, y_m),
+                    by = "fmid")
+  
+  sub.pos <- bind_rows(sub.pos, out)
+}
+
 # 2. check errors in subplot_n --------------------------------------------
 
 ## check strange subplot numbers
 
 error <- sub.pos %>% filter(!subplot_n %in% c(1:6)) %>% distinct(fmid) %>% pull(fmid)
+
+## NEW
+
+error <- sub.pos %>% filter(!subplot_n %in% c(0:5)) %>% distinct(fmid) %>% pull(fmid)
 
 pdf("subplotPosCheck.pdf", width = 9.2, height = 8, pointsize = 12, onefile = T)
 
@@ -44,7 +67,7 @@ for (e in error) {
   
   p <- ggplot(x) +
     geom_point(aes(x = x_m, y = y_m)) +
-    geom_point(aes(0,0), shape = 3, color = "red",size = 3) +
+    geom_point(aes(0,0), shape = 3, color = "red", size = 3) +
     geom_text(aes(x_m+0.5, y_m+0.5, label = subplot_n), size = 3, color = "grey20") +
     ggtitle(unique(x$plot))
   
@@ -54,23 +77,26 @@ for (e in error) {
 
 dev.off()
 
-
 ## check all plots if order of subplots is correct (remove previously corrected strange subplots - 99)
 
 pdf("subplotPosCheck.pdf", width = 9.2, height = 8, pointsize = 12, onefile = T)
 
 for (i in unique(sub.pos$fmid)) {
-  
+
+  ## NEW
+    
   x <- sub.pos %>% 
-    filter(fmid %in% i & subplot_n %in% c(1:6)) %>%
-    inner_join(., fm.plotids, by = "fmid") %>%
-    unite(., "plot", project, plotid, fmid, sep = "-")
+    filter(fmid %in% i & subplot_n %in% c(0:5))
+    # filter(fmid %in% i & subplot_n %in% c(1:6)) %>%
+    # inner_join(., fm.plotids, by = "fmid") %>%
+    # unite(., "plot", project, plotid, fmid, sep = "-")
   
   p <- ggplot(x) +
     geom_point(aes(x = x_m, y = y_m)) +
-    geom_point(aes(0,0), shape = 3, color = "red",size = 3) +
+    geom_point(aes(0,0), shape = 3, color = "red", size = 3) +
     geom_text(aes(x_m+0.5, y_m+0.5, label = subplot_n), size = 3, color = "grey20") +
-    ggtitle(unique(x$plot))
+    # ggtitle(unique(x$plot))
+    ggtitle(unique(x$fmid))
   
   print(p)
   
@@ -90,6 +116,10 @@ clean <- sub.pos %>%
   inner_join(., fm.plotids, by = "fmid") %>%
   select(date, plotid, subplot_n, x_m, y_m) %>%
   arrange(date, plotid, subplot_n)
+
+## NEW
+
+clean <- sub.pos %>% mutate(date = 2022) %>% select(date, plotid, subplot_n, x_m, y_m) %>% arrange(date, plotid, subplot_n)
 
 write.table(clean, "2022_regSubplot_position.csv", sep = ",", row.names = F, na = "") 
 
