@@ -258,7 +258,7 @@ check_structural_data <- function(data, fk) {
   error.list$T_layer_dead <- data$tree %>% filter(!status %in% c(1:4) & !layer %in% -1)
   error.list$T_species <- data$tree %>% filter(!species %in% fk$species_fk)
   error.list$T_dbh <- data$tree %>% filter(dbh_mm < unique(data$plot$dbh_min))
-  error.list$T_dbh_alive <- tree.check %>% filter(dbh_mm < dbh_old) 
+  error.list$T_dbh_alive <- tree.check %>% filter(status %in% c(1:4) & dbh_mm < dbh_old) 
   error.list$T_dbh_dead <- tree.check %>% filter(!status %in% c(1:4) & !status_old %in% c(1:4) & dbh_mm > dbh_old)
   error.list$T_height <- data$tree %>% filter(crownht_m > height_m)
   error.list$T_decay <- data$tree %>% filter(!decay %in% fk$decay_fk)
