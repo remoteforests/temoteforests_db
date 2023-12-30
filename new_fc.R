@@ -7,11 +7,10 @@ read_fm_data <- function(file){
   # plot
   
   data.list$plot <- openxlsx::read.xlsx(paste0(file), sheet = "Plots", detectDates = T) %>%
-    filter(!EDIT_USER %in% "SYSTEM") %>%
+    filter(!is.na(Date)) %>%
     select(pid = ID, Date, Plotid, plotsize = Area_m2, Slope, Aspect, Landform, Hillform) %>%
     mutate(pid = as.numeric(pid),
            Date = as.numeric(substr(as.character(Date), 1, 4)),
-           Date = first(Date[!is.na(Date)]),
            Plotid = as.character(Plotid),
            plotsize = as.numeric(plotsize),
            Slope = as.numeric(Slope),
@@ -21,17 +20,24 @@ read_fm_data <- function(file){
              
   names(data.list$plot) <- tolower(names(data.list$plot))
   
+  # tms
+  
+  data.list$tms <- openxlsx::read.xlsx(paste0(file), sheet = "TMS") %>%
+    select(1:10) %>%
+    mutate(FM = substr(file, nchar(file) - 17, nchar(file) - 5))
+  
   # tree
   
   pid <- data.list$plot %>% pull(pid)
-  
+    
   sp <- openxlsx::read.xlsx(paste0(file), sheet = "lookup_species") %>% select(Species = ID, species = VALUE1)
   
   data.list$tree <- openxlsx::read.xlsx(paste0(file), sheet = "Trees") %>%
-    filter(IDPlots %in% pid & Measured %in% 1 & is.na(Note)) %>%
+    filter(IDPlots %in% pid & !is.na(Measured)) %>%
     left_join(., sp, by = "Species") %>%
     select(pid = IDPlots, tid = ID, x_m, y_m, Status, Growth, Layer, species, 
-           DBH_mm, decayht = DecayHeight, decay_wood = DecayWood, Decay, Forked) %>%
+           DBH_mm, Height_m, crownht_m = CrownHeight_m, CrownDiam1_m, CrownDiam2_m,
+           decayht = DecayHeight, decay_wood = DecayWood, Decay, Forked) %>%
     mutate(pid = as.numeric(pid),
            tid = as.numeric(tid),
            x_m = as.numeric(x_m),
@@ -41,10 +47,10 @@ read_fm_data <- function(file){
            Layer = as.numeric(Layer),
            species = as.character(species),
            DBH_mm = as.numeric(DBH_mm),
-           height_m = NA_real_,
-           crownht_m = NA_real_,
-           crowndiam1_m = NA_real_,
-           crowndiam2_m = NA_real_,
+           Height_m = as.numeric(Height_m),
+           crownht_m = as.numeric(crownht_m),
+           CrownDiam1_m = as.numeric(CrownDiam1_m),
+           CrownDiam2_m = as.numeric(CrownDiam2_m),
            decayht = as.numeric(decayht),
            decay_wood = as.numeric(decay_wood),
            Decay = as.numeric(Decay),
@@ -60,9 +66,22 @@ read_fm_data <- function(file){
            tid = as.numeric(tid), 
            mort_agent = as.numeric(mort_agent))
   
+  # microsites
+  
+  data.list$microsites <- openxlsx::read.xlsx(paste0(file), sheet = "Microsites") %>%
+    select(pid = IDPlots, tid = IDTrees, Microsite, Count) %>%
+    mutate(pid = as.numeric(pid), 
+           tid = as.numeric(tid), 
+           Microsite = as.numeric(Microsite),
+           Count = as.numeric(Count))
+  
+  names(data.list$microsites) <- tolower(names(data.list$microsites))
+  
   # output
   
   data.list$plot <- data.list$plot %>% inner_join(., data.list$tree %>% distinct(., pid), by = "pid")
+  
+  data.list$tms <- data.list$plot %>% select(pid, date, plotid) %>% right_join(., data.list$tms, by = c("pid" = "IDPlots"))
   
   data.list$tree <- data.list$tree %>% inner_join(., data.list$plot %>% select(pid, date, plotid), by = "pid") %>%
     mutate(treen = as.character(tid),
@@ -74,6 +93,8 @@ read_fm_data <- function(file){
   
   data.list$mortality <- data.list$mortality %>% left_join(., data.list$tree %>% select(pid, tid, date, treeid), by = c("pid", "tid"))
   
+  data.list$microsites <- data.list$microsites %>% left_join(., data.list$tree %>% select(pid, tid, date, treeid), by = c("pid", "tid"))
+  
   return(data.list)
 }
 
@@ -82,21 +103,6 @@ read_fr_data <- function(file){
   #' @param file path to the .xlsx file
   
   data.list <- list()
-  
-  # microsites
-  
-  data.list$microsites <- openxlsx::read.xlsx(paste0(file), sheet = "microsites")
-  
-  if(!identical(c("date", "treeid", "microsite", "count"),
-                names(data.list$microsites)))
-    
-    stop("Microsites data do not match with required table format.")
-  
-  data.list$microsites <- data.list$microsites %>%
-    mutate(date = as.numeric(date),
-           treeid = as.character(treeid),
-           microsite = as.numeric(microsite),
-           count = as.numeric(count))
   
   # deadwood
   
@@ -155,66 +161,66 @@ read_fr_data <- function(file){
   
   # soil
   
-  data.list$soil <- openxlsx::read.xlsx(paste0(file), sheet = "soil_profile")
-  
-  if(!identical(c("date", "plotid", "sample",	"soil_horizon", "depth_cm"), 
-                names(data.list$soil))) 
-    
-    stop("Soil data do not match with required table format.")
-  
-  data.list$soil <- data.list$soil %>%
-    mutate(date = as.numeric(date),
-           plotid = as.character(plotid),
-           sample = as.numeric(sample),
-           soil_horizon = as.character(soil_horizon),
-           depth_cm = as.numeric(depth_cm))
+  # data.list$soil <- openxlsx::read.xlsx(paste0(file), sheet = "soil_profile")
+  # 
+  # if(!identical(c("date", "plotid", "sample",	"soil_horizon", "depth_cm"), 
+  #               names(data.list$soil))) 
+  #   
+  #   stop("Soil data do not match with required table format.")
+  # 
+  # data.list$soil <- data.list$soil %>%
+  #   mutate(date = as.numeric(date),
+  #          plotid = as.character(plotid),
+  #          sample = as.numeric(sample),
+  #          soil_horizon = as.character(soil_horizon),
+  #          depth_cm = as.numeric(depth_cm))
   
   # vegetation
   
-  data.list$vegetation <- openxlsx::read.xlsx(paste0(file), sheet = "vegetation", detectDates = T)
-  
-  if(!identical(c("date", "sampling_date", "plotid", "large_gap",	"vegetationht", 
-                  "vegetation_cover", "vaccinium_myrtillus_per", "rubus_per", 
-                  "bryopsida_per", "polypodiopsida_per", "poaceae_per", "ericaceae_per",
-                  "other_per", "biotope_quality", "biotope_trend", "large_herbivore_feces"), 
-                names(data.list$vegetation))) 
-    
-    stop("Vegetation data do not match with required table format.")
+  # data.list$vegetation <- openxlsx::read.xlsx(paste0(file), sheet = "vegetation", detectDates = T)
+  # 
+  # if(!identical(c("date", "sampling_date", "plotid", "large_gap",	"vegetationht", 
+  #                 "vegetation_cover", "vaccinium_myrtillus_per", "rubus_per", 
+  #                 "bryopsida_per", "polypodiopsida_per", "poaceae_per", "ericaceae_per",
+  #                 "other_per", "biotope_quality", "biotope_trend", "large_herbivore_feces"), 
+  #               names(data.list$vegetation))) 
+  #   
+  #   stop("Vegetation data do not match with required table format.")
+  # 
+  #  data.list$vegetation <- data.list$vegetation %>%
+  #    mutate(date = as.numeric(date),
+  #           sampling_date = as.POSIXlt(sampling_date, tz = "UTC", format = "%Y-%m-%d"),
+  #           plotid = as.character(plotid),
+  #           large_gap = as.numeric(large_gap),
+  #           vegetationht = as.numeric(vegetationht),
+  #           vegetation_cover = as.numeric(vegetation_cover),
+  #           vaccinium_myrtillus_per = as.numeric(vaccinium_myrtillus_per),
+  #           rubus_per = as.numeric(rubus_per),
+  #           bryopsida_per = as.numeric(bryopsida_per),
+  #           polypodiopsida_per = as.numeric(polypodiopsida_per),
+  #           poaceae_per = as.numeric(poaceae_per),
+  #           ericaceae_per = as.numeric(ericaceae_per),
+  #           other_per = as.numeric(other_per),
+  #           biotope_quality = as.numeric(biotope_quality),
+  #           biotope_trend = as.numeric(biotope_trend),
+  #           large_herbivore_feces = as.numeric(large_herbivore_feces))
 
-   data.list$vegetation <- data.list$vegetation %>%
-     mutate(date = as.numeric(date),
-            sampling_date = as.POSIXlt(sampling_date, tz = "UTC", format = "%Y-%m-%d"),
-            plotid = as.character(plotid),
-            large_gap = as.numeric(large_gap),
-            vegetationht = as.numeric(vegetationht),
-            vegetation_cover = as.numeric(vegetation_cover),
-            vaccinium_myrtillus_per = as.numeric(vaccinium_myrtillus_per),
-            rubus_per = as.numeric(rubus_per),
-            bryopsida_per = as.numeric(bryopsida_per),
-            polypodiopsida_per = as.numeric(polypodiopsida_per),
-            poaceae_per = as.numeric(poaceae_per),
-            ericaceae_per = as.numeric(ericaceae_per),
-            other_per = as.numeric(other_per),
-            biotope_quality = as.numeric(biotope_quality),
-            biotope_trend = as.numeric(biotope_trend),
-            large_herbivore_feces = as.numeric(large_herbivore_feces))
-
-   # habitat
+  # habitat
    
-   data.list$habitat <- openxlsx::read.xlsx(paste0(file), sheet = "habitat", detectDates = T)
-   
-   if(!identical(c("date", "sampling_date", "plotid",	"animal_species", "gender", "habitat_sign_type"), 
-                 names(data.list$habitat))) 
-     
-     stop("Habitat data do not match with required table format.")
-   
-   data.list$habitat <- data.list$habitat %>%
-     mutate(date = as.numeric(date),
-            sampling_date = as.POSIXlt(sampling_date, tz = "UTC", format = "%Y-%m-%d"),
-            plotid = as.character(plotid),
-            animal_species = as.character(animal_species),
-            gender = as.numeric(gender),
-            habitat_sign_type = as.numeric(habitat_sign_type))
+  # data.list$habitat <- openxlsx::read.xlsx(paste0(file), sheet = "habitat", detectDates = T)
+  # 
+  # if(!identical(c("date", "sampling_date", "plotid",	"animal_species", "gender", "habitat_sign_type"), 
+  #               names(data.list$habitat))) 
+  #   
+  #   stop("Habitat data do not match with required table format.")
+  # 
+  # data.list$habitat <- data.list$habitat %>%
+  #   mutate(date = as.numeric(date),
+  #          sampling_date = as.POSIXlt(sampling_date, tz = "UTC", format = "%Y-%m-%d"),
+  #          plotid = as.character(plotid),
+  #          animal_species = as.character(animal_species),
+  #          gender = as.numeric(gender),
+  #          habitat_sign_type = as.numeric(habitat_sign_type))
             
   return(data.list)
 }
@@ -350,48 +356,48 @@ check_structural_data <- function(data, fk) {
   
   # soil
   
-  error.list$S_not_in_plot <- anti_join(data$soil, data$plot, by = c("date", "plotid"))
-  error.list$S_sample <- data$soil %>% filter(!sample %in% c(1:5))
-  error.list$S_soil_horizon <- data$soil %>% filter(!soil_horizon %in% fk$soil_horizon_fk)
-  error.list$S_bedrock <- data$soil %>% mutate(n = ifelse(soil_horizon %in% "R", 1, 0)) %>% 
-    group_by(date, plotid, sample) %>% summarise(n = sum(n)) %>% filter(!n %in% 1)
-  error.list$S_bedrock_depth <- data$soil %>% filter(soil_horizon %in% "R" & !depth_cm %in% c(-1, 0, 1))
-  error.list$S_depth_cm <- data$soil %>% filter(!soil_horizon %in% "R") %>% filter(is.na(depth_cm) | depth_cm <= 0)
-  error.list$S_duplicates <- as_tibble(duplicated(data$soil)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
-    inner_join(., data$soil %>% rownames_to_column("id"), by = "id")
-  error.list$S_ak <- data$soil %>% group_by(date, plotid, sample, soil_horizon) %>% filter(n() > 1)
+  # error.list$S_not_in_plot <- anti_join(data$soil, data$plot, by = c("date", "plotid"))
+  # error.list$S_sample <- data$soil %>% filter(!sample %in% c(1:5))
+  # error.list$S_soil_horizon <- data$soil %>% filter(!soil_horizon %in% fk$soil_horizon_fk)
+  # error.list$S_bedrock <- data$soil %>% mutate(n = ifelse(soil_horizon %in% "R", 1, 0)) %>% 
+  #   group_by(date, plotid, sample) %>% summarise(n = sum(n)) %>% filter(!n %in% 1)
+  # error.list$S_bedrock_depth <- data$soil %>% filter(soil_horizon %in% "R" & !depth_cm %in% c(-1, 0, 1))
+  # error.list$S_depth_cm <- data$soil %>% filter(!soil_horizon %in% "R") %>% filter(is.na(depth_cm) | depth_cm <= 0)
+  # error.list$S_duplicates <- as_tibble(duplicated(data$soil)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+  #   inner_join(., data$soil %>% rownames_to_column("id"), by = "id")
+  # error.list$S_ak <- data$soil %>% group_by(date, plotid, sample, soil_horizon) %>% filter(n() > 1)
   
   # vegetation
   
-  error.list$V_not_in_plot <- anti_join(data$vegetation, data$plot, by = c("date", "plotid"))
-  error.list$V_sampling_date <- data$vegetation %>% filter(is.na(sampling_date))
-  error.list$V_sampling_date_date <- data$vegetation %>% mutate(sampling = as.numeric(substr(sampling_date, 1, 4))) %>% rowwise() %>% filter(!sampling %in% date)
-  error.list$V_large_gap <- data$vegetation %>% filter(!large_gap %in% fk$large_gap_fk)
-  error.list$V_vegetationht <- data$vegetation %>% filter(!vegetationht %in% fk$vegetationheight_fk)
-  error.list$V_vegetation_cover <- data$vegetation %>% select(-sampling_date) %>%
-    mutate(cover = vaccinium_myrtillus_per + rubus_per + bryopsida_per + polypodiopsida_per + poaceae_per + ericaceae_per + other_per) %>%
-    gather(., family, value, vaccinium_myrtillus_per, rubus_per, bryopsida_per, polypodiopsida_per, poaceae_per, ericaceae_per, other_per) %>%
-    group_by(plotid, vegetation_cover, cover) %>%
-    summarise(value = max(value)) %>%
-    filter(vegetation_cover > cover | vegetation_cover < value)
-  error.list$V_biotope_quality <- data$vegetation %>% filter(!biotope_quality %in% fk$biotope_quality_fk)
-  error.list$V_biotope_trend <- data$vegetation %>% filter(!biotope_trend %in% fk$biotope_trend_fk)
-  error.list$V_large_herbivore_feces <- data$vegetation %>% filter(large_herbivore_feces < 0)
-  error.list$V_duplicates <- as_tibble(duplicated(data$vegetation)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
-    inner_join(., data$vegetation %>% rownames_to_column("id"), by = "id")
-  error.list$V_ak <- data$vegetation %>% group_by(date, plotid, sampling_date) %>% filter(n() > 1)
+  # error.list$V_not_in_plot <- anti_join(data$vegetation, data$plot, by = c("date", "plotid"))
+  # error.list$V_sampling_date <- data$vegetation %>% filter(is.na(sampling_date))
+  # error.list$V_sampling_date_date <- data$vegetation %>% mutate(sampling = as.numeric(substr(sampling_date, 1, 4))) %>% rowwise() %>% filter(!sampling %in% date)
+  # error.list$V_large_gap <- data$vegetation %>% filter(!large_gap %in% fk$large_gap_fk)
+  # error.list$V_vegetationht <- data$vegetation %>% filter(!vegetationht %in% fk$vegetationheight_fk)
+  # error.list$V_vegetation_cover <- data$vegetation %>% select(-sampling_date) %>%
+  #   mutate(cover = vaccinium_myrtillus_per + rubus_per + bryopsida_per + polypodiopsida_per + poaceae_per + ericaceae_per + other_per) %>%
+  #   gather(., family, value, vaccinium_myrtillus_per, rubus_per, bryopsida_per, polypodiopsida_per, poaceae_per, ericaceae_per, other_per) %>%
+  #   group_by(plotid, vegetation_cover, cover) %>%
+  #   summarise(value = max(value)) %>%
+  #   filter(vegetation_cover > cover | vegetation_cover < value)
+  # error.list$V_biotope_quality <- data$vegetation %>% filter(!biotope_quality %in% fk$biotope_quality_fk)
+  # error.list$V_biotope_trend <- data$vegetation %>% filter(!biotope_trend %in% fk$biotope_trend_fk)
+  # error.list$V_large_herbivore_feces <- data$vegetation %>% filter(large_herbivore_feces < 0)
+  # error.list$V_duplicates <- as_tibble(duplicated(data$vegetation)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+  #   inner_join(., data$vegetation %>% rownames_to_column("id"), by = "id")
+  # error.list$V_ak <- data$vegetation %>% group_by(date, plotid, sampling_date) %>% filter(n() > 1)
   
   # habitat
   
-  error.list$H_not_in_plot <- anti_join(data$habitat, data$plot, by = c("date", "plotid"))
-  error.list$H_sampling_date <- data$habitat %>% filter(is.na(sampling_date))
-  error.list$H_sampling_date_date <- data$habitat %>% mutate(sampling = as.numeric(substr(sampling_date, 1, 4))) %>% rowwise() %>% filter(!sampling %in% date)
-  error.list$H_animal_species <- data$habitat %>% filter(!animal_species %in% fk$animal_species_fk)
-  error.list$H_gender <- data$habitat %>% filter(!gender %in% fk$gender_fk)
-  error.list$H_habitat_sign_type <- data$habitat %>% filter(!habitat_sign_type %in% fk$habitat_sign_type_fk)
-  error.list$H_duplicates <- as_tibble(duplicated(data$habitat)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
-    inner_join(., data$habitat %>% rownames_to_column("id"), by = "id")
-  error.list$H_ak <- data$habitat %>% group_by(date, plotid, sampling_date, animal_species, gender, habitat_sign_type) %>% filter(n() > 1)
+  # error.list$H_not_in_plot <- anti_join(data$habitat, data$plot, by = c("date", "plotid"))
+  # error.list$H_sampling_date <- data$habitat %>% filter(is.na(sampling_date))
+  # error.list$H_sampling_date_date <- data$habitat %>% mutate(sampling = as.numeric(substr(sampling_date, 1, 4))) %>% rowwise() %>% filter(!sampling %in% date)
+  # error.list$H_animal_species <- data$habitat %>% filter(!animal_species %in% fk$animal_species_fk)
+  # error.list$H_gender <- data$habitat %>% filter(!gender %in% fk$gender_fk)
+  # error.list$H_habitat_sign_type <- data$habitat %>% filter(!habitat_sign_type %in% fk$habitat_sign_type_fk)
+  # error.list$H_duplicates <- as_tibble(duplicated(data$habitat)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
+  #   inner_join(., data$habitat %>% rownames_to_column("id"), by = "id")
+  # error.list$H_ak <- data$habitat %>% group_by(date, plotid, sampling_date, animal_species, gender, habitat_sign_type) %>% filter(n() > 1)
   
   return(error.list)
 }
@@ -633,15 +639,15 @@ clean_structural_data <- function(data){
   
   # soil
   
-  data.clean$soil <- data$soil
+  # data.clean$soil <- data$soil
   
   # vegetation
   
-  data.clean$vegetation <- data$vegetation %>% mutate(gap_distance_m = NA)
+  # data.clean$vegetation <- data$vegetation %>% mutate(gap_distance_m = NA)
   
   # habitat
   
-  data.clean$habitat <- data$habitat
+  # data.clean$habitat <- data$habitat
   
   return(data.clean)
 }

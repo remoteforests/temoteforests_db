@@ -23,38 +23,43 @@ data.raw <- list()
 
 # 1. 1. fieldmap ----------------------------------------------------------
 
-## first manually convert 'Date' column in 'Plots' sheet to 'Date (short)' format;
-## second check 'Measured' and 'Note' columns in 'Trees' sheet for inconsistencies
+## first: check all 'Note' columns for additional information;
+## second: remove duplicate 'Height_m' column in 'Trees' sheet;
+## third: manually convert 'Date' column in 'Plots' sheet to 'Date (short)' format and check it against 'EDIT_USER' & 'EDIT_DATE' columns -> fill in if necessary;
+## fourth: check 'Measured' column in 'Trees' sheet against 'EDIT_USER' & 'EDIT_DATE' columns -> fill in if necessary;
 
-fm <- list.files(path = "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2022/fieldmap/new", pattern = ".xlsx", full.names = T)
+fm <- list.files(path = "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/fieldmap/new", pattern = ".xlsx", full.names = T)
 
 for (i in fm) {
   
   data <- read_fm_data(i)
   
   data.raw$plot <- bind_rows(data.raw$plot, data$plot)
+  data.raw$tms <- bind_rows(data.raw$tms, data$tms)
   data.raw$tree <- bind_rows(data.raw$tree, data$tree)
   data.raw$mortality <- bind_rows(data.raw$mortality, data$mortality)
+  data.raw$microsites <- bind_rows(data.raw$microsites, data$microsites)
   
   remove(data)
   
 }
 
+# openxlsx::write.xlsx(data.raw$tms, "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/2023_TMS.xlsx")
+
 # 1. 2. forms -------------------------------------------------------------
 
-fr <- list.files(path = "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2022/raw2", pattern = ".xlsx", full.names = T)
+fr <- list.files(path = "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/raw/todo", pattern = ".xlsx", full.names = T)
 
 for (i in fr) {
   
   data <- read_fr_data(i)
   
-  data.raw$microsites <- bind_rows(data.raw$microsites, data$microsites)
   data.raw$deadwood <- bind_rows(data.raw$deadwood, data$deadwood)
   data.raw$regeneration <- bind_rows(data.raw$regeneration, data$regeneration)
   data.raw$regeneration_subplot <- bind_rows(data.raw$regeneration_subplot, data$regeneration_subplot)
-  data.raw$soil <- bind_rows(data.raw$soil, data$soil)
-  data.raw$vegetation <- bind_rows(data.raw$vegetation, data$vegetation)
-  data.raw$habitat <- bind_rows(data.raw$habitat, data$habitat)
+  # data.raw$soil <- bind_rows(data.raw$soil, data$soil)
+  # data.raw$vegetation <- bind_rows(data.raw$vegetation, data$vegetation)
+  # data.raw$habitat <- bind_rows(data.raw$habitat, data$habitat)
   
   remove(data)
   
