@@ -1,15 +1,16 @@
 # setup -------------------------------------------------------------------
 
-library(pool); library(tidyverse); library(zoo)
+library(pool);library(tidyverse);library(zoo)
 
 source("pw.R")
-source("0.functions.R")
+
+source("data/upload/data_upload_fc.R")
 
 data.list <- list()
 
 # STRUCTURAL DATA ---------------------------------------------------------
 
-setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2022/clean")
+setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/clean")
 
 # 1. reading --------------------------------------------------------------
 
@@ -21,6 +22,7 @@ data.list$tree_quality <- read_data("tree_quality")
 data.list$deadwood <- read_data("deadwood")
 data.list$regeneration <- read_data("regeneration")
 data.list$regeneration_subplot <- read_data("regeneration_subplot")
+data.list$reg_subplot_position <- read_data("reg_subplot_position")
 data.list$soil_profile <- read_data("soil")
 data.list$vegetation <- read_data("vegetation")
 data.list$habitat_signs <- read_data("habitat")
@@ -39,11 +41,12 @@ data.list$tree <- prepare_data("tree")
 data.list$deadwood <- prepare_data("deadwood")
 data.list$regeneration <- prepare_data("regeneration")
 data.list$regeneration_subplot <- prepare_data("regeneration_subplot")
+data.list$reg_subplot_position <- prepare_data("reg_subplot_position")
 data.list$soil_profile <- prepare_data("soil_profile")
 data.list$vegetation <- prepare_data("vegetation")
 data.list$habitat_signs <- prepare_data("habitat_signs")
 
-upload_data(x = c("tree", "deadwood", "regeneration", "regeneration_subplot", "soil_profile", "vegetation", "habitat_signs"))
+upload_data(x = c("tree", "deadwood", "regeneration", "regeneration_subplot", "reg_subplot_position", "soil_profile", "vegetation", "habitat_signs"))
 
 ## tree_id
 

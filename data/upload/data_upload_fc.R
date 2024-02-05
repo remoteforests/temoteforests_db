@@ -360,8 +360,33 @@ read_data <- function(name){
                             
                           } else {
                             
+                            if(name == "reg_subplot_position"){
+                              
+                              regref.list <- list.files(pattern = "*_regref.csv", recursive = F)
+                              
+                              data.df <- tibble()
+                              
+                              for(i in regref.list){
+                                
+                                data.df <- bind_rows(data.df,
+                                                     read.table(i, sep = ",", header = T, stringsAsFactors = F) %>%
+                                                       mutate(regref.date = as.numeric(regref.date),
+                                                              regref.plotid = as.character(regref.plotid),
+                                                              regref.subplot_n = as.numeric(regref.subplot_n),
+                                                              regref.x_m = as.numeric(regref.x_m),
+                                                              regref.y_m = as.numeric(regref.y_m)))
+                                
+                              }
+                              
+                              data.df <- rename_col(data.df) %>% arrange(date, plotid, subplot_n)
+                              
+                              return(data.df)
+                              
+                            } else {
+                            
                             stop("Unknown name of the data file.")
                             
+                            }
                           }
                         }
                       } 
@@ -419,7 +444,7 @@ prepare_data <- function(name){
     
   } else {
     
-    if(name == "tree" | name == "deadwood" | name == "regeneration" | name == "regeneration_subplot" |
+    if(name == "tree" | name == "deadwood" | name == "regeneration" | name == "regeneration_subplot" | name == "reg_subplot_position" |
        name == "canopy_analysis" | name == "soil_profile" | name == "vegetation" | name == "habitat_signs") {
       
       id.max <- pull_id(name)

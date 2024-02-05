@@ -77,6 +77,12 @@ read_fm_data <- function(file){
   
   names(data.list$microsites) <- tolower(names(data.list$microsites))
   
+  # regref
+  
+  data.list$regref <- openxlsx::read.xlsx(paste0(file), sheet = "RegRefPoints") %>%
+    filter(IDPlots %in% pid) %>% 
+    select(pid = IDPlots, subplot_n = ID, x_m, y_m)
+  
   # output
   
   data.list$plot <- data.list$plot %>% inner_join(., data.list$tree %>% distinct(., pid), by = "pid")
@@ -94,6 +100,8 @@ read_fm_data <- function(file){
   data.list$mortality <- data.list$mortality %>% left_join(., data.list$tree %>% select(pid, tid, date, treeid), by = c("pid", "tid"))
   
   data.list$microsites <- data.list$microsites %>% left_join(., data.list$tree %>% select(pid, tid, date, treeid), by = c("pid", "tid"))
+  
+  data.list$regref <- data.list$regref %>% inner_join(., data.list$plot %>% select(pid, date, plotid), by = "pid")
   
   return(data.list)
 }
@@ -643,6 +651,10 @@ clean_structural_data <- function(data){
   # regeneration_subplot
   
   data.clean$regeneration_subplot <- data$regeneration_subplot
+  
+  # regref
+  
+  data.clean$regref <- data$regref %>% select(-pid)
   
   # soil
   
