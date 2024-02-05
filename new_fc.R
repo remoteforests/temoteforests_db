@@ -310,12 +310,11 @@ check_structural_data <- function(data, fk) {
   
   error.list$Mi_not_in_tree <- anti_join(data$microsites, data$tree, by = c("date", "treeid"))
   error.list$Mi_microsite <- data$microsites %>% filter(!microsite %in% fk$microsite_fk)
-  error.list$Mi_count <- data$microsites %>% filter(is.na(count) | count < 1)
-  error.list$Mi_countable <- data$microsites %>% filter(microsite %in% c(11, 20, 23, 25, 26, 29, 32:41, 44:47) & count > 1)
+  error.list$Mi_count <- data$microsites %>% filter(count < 1)
+  error.list$Mi_countable <- data$microsites %>% filter(microsite %in% c(11, 20, 23, 25, 26, 29, 32:41, 44:47) & !is.na(count))
   error.list$Mi_duplicates <- as_tibble(duplicated(data$microsites)) %>% rownames_to_column("id") %>% filter(value %in% T) %>% 
     inner_join(., data$microsites %>% rownames_to_column("id"), by = "id")
   error.list$Mi_ak <- data$microsites %>% group_by(date, treeid, microsite) %>% filter(n() > 1)
-  
   
   # deadwood
   
@@ -555,12 +554,17 @@ clean_structural_data <- function(data){
              is.na(old_treen) & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm > dbh_min_old + 50 ~ 2,
              TRUE ~ 0),
       growth = ifelse(!status %in% c(1:4), -1, growth),
+      growth = ifelse(status %in% c(1:4) & is.na(growth), 99, growth),
       layer = ifelse(!status %in% c(1:4), -1, layer),
+      layer = ifelse(status %in% c(1:4) & is.na(layer), 99, layer),
       decay = ifelse(status %in% c(0, 10), 5, decay),
       decay = ifelse(status %in% c(1:4), -1, decay),
+      decay = ifelse(!status %in% c(1:4) & is.na(decay), 99, decay),
       decay_wood = ifelse(status %in% c(1:4), -1, decay_wood),
+      decay_wood = ifelse(!status %in% c(1:4) & is.na(decay_wood), 99, decay_wood),
       decayht = ifelse(status %in% c(0, 10) | decay %in% 5, 0, decayht),
-      decayht = ifelse(status %in% c(1:4), -1, decayht)) %>%
+      decayht = ifelse(status %in% c(1:4), -1, decayht),
+      decayht = ifelse(!status %in% c(1:4) & is.na(decayht), 99, decayht)) %>%
     select(-old_treen, -old_x, -pid, -tid, -plotsize, -foresttype, -plotsize_old, -dbh_min_old, -distance_m)
   
   # tree_quality
@@ -621,8 +625,10 @@ clean_structural_data <- function(data){
   
   # microsites
   
-  data.clean$microsites <- data$microsites %>% 
-    mutate(count = ifelse(microsite %in% c(11, 20, 23, 25, 26, 29, 32:41, 44:47), NA, count),
+  data.clean$microsites <- data$microsites %>%
+    filter(!is.na(microsite)) %>%
+    mutate(count = ifelse(is.na(count), 1, count),
+           count = ifelse(microsite %in% c(11, 20, 23, 25, 26, 29, 32:41, 44:47), NA, count),
            method = 2)
   
   # deadwood

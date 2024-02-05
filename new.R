@@ -65,35 +65,6 @@ for (i in fr) {
   
 }
 
-# date.id <- unique(data.raw$plot$date)
-# 
-# plot.id <- unique(data.raw$plot$plotid)
-# 
-# plot.db <- tbl(KELuser, "plot") %>% 
-#   filter(plotid %in% plot.id & !date %in% date.id) %>%
-#   group_by(plotid) %>% 
-#   arrange(desc(date)) %>%
-#   filter(row_number() == 1) %>%
-#   select(plot_id = id, plotid, lng_old = lng, lat_old = lat, plotsize_old = plotsize, dbh_min_old = dbh_min) %>%
-#   inner_join(., tbl(KELuser, "tree") %>% filter(!onplot %in% 0), by = "plot_id") %>%
-#   mutate(n_pos = ifelse(is.na(x_m), 0, 1)) %>%
-#   collect() %>%
-#   group_by(plotid, lng_old, lat_old, plotsize_old, dbh_min_old) %>%
-#   summarise(n_pos = sum(n_pos),
-#             n_trees = n(),
-#             coef_old = (n_pos/n_trees) * 100) %>%
-#   ungroup()
-# 
-# tree.db <- tbl(KELuser, "tree") %>% 
-#   inner_join(., 
-#              tbl(KELuser, "plot") %>% 
-#                filter(plotid %in% plot.id & !date %in% date.id) %>%
-#                group_by(plotid) %>%
-#                arrange(desc(date)) %>%
-#                filter(row_number() == 1), 
-#              by = c("plot_id" = "id")) %>% 
-#   collect()
-
 # 2. check ----------------------------------------------------------------
 
 error.list <- check_structural_data(data = data.raw, fk = fk.list)
