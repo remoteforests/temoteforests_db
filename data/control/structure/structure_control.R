@@ -1,9 +1,10 @@
-# setup -------------------------------------------------------------------
+# 0. setup ----------------------------------------------------------------
 
 library(pool);library(tidyverse)
 
 source("pw.R")
-source("new_fc.R")
+
+source("data/control/structure/structure_control_fc.R")
 
 fk <- dbGetQuery(KELuser, "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename LIKE '%fk'")
 
@@ -15,81 +16,61 @@ for (i in fk$tablename) {
   
 }
 
-# STRUCTURAL DATA ---------------------------------------------------------
+# 1. STRUCTURAL DATA ------------------------------------------------------
 
-# 1. read -----------------------------------------------------------------
+# 1. 1. read --------------------------------------------------------------
 
 data.raw <- list()
 
-# 1. 1. fieldmap ----------------------------------------------------------
+# 1. 1. 1. fieldmap -------------------------------------------------------
 
-## first manually convert 'Date' column in 'Plots' sheet to 'Date (short)' format;
-## second check 'Measured' and 'Note' columns in 'Trees' sheet for inconsistencies
+## first: check all 'Note' columns for additional information;
+## second: remove duplicate 'Height_m' column in 'Trees' sheet;
+## third: manually convert 'Date' column in 'Plots' sheet to 'Date (short)' format and check it against 'EDIT_USER' & 'EDIT_DATE' columns -> fill in if necessary;
+## fourth: check 'Measured' column in 'Trees' sheet against 'EDIT_USER' & 'EDIT_DATE' columns -> fill in if necessary;
 
-fm <- list.files(path = "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2022/fieldmap/new", pattern = ".xlsx", full.names = T)
+path <- "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/fieldmap/new"
+
+fm <- list.files(path, pattern = ".xlsx", full.names = T)
 
 for (i in fm) {
   
   data <- read_fm_data(i)
   
   data.raw$plot <- bind_rows(data.raw$plot, data$plot)
+  data.raw$tms <- bind_rows(data.raw$tms, data$tms)
   data.raw$tree <- bind_rows(data.raw$tree, data$tree)
   data.raw$mortality <- bind_rows(data.raw$mortality, data$mortality)
+  data.raw$microsites <- bind_rows(data.raw$microsites, data$microsites)
   
   remove(data)
   
 }
 
-# 1. 2. forms -------------------------------------------------------------
+# openxlsx::write.xlsx(data.raw$tms, "data/control/structure/TMS.xlsx")
 
-fr <- list.files(path = "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2022/raw2", pattern = ".xlsx", full.names = T)
+# 1. 1. 2. forms ----------------------------------------------------------
+
+path <- "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/raw"
+
+fr <- list.files(path, pattern = ".xlsx", full.names = T)
 
 for (i in fr) {
   
   data <- read_fr_data(i)
   
-  data.raw$microsites <- bind_rows(data.raw$microsites, data$microsites)
   data.raw$deadwood <- bind_rows(data.raw$deadwood, data$deadwood)
   data.raw$regeneration <- bind_rows(data.raw$regeneration, data$regeneration)
   data.raw$regeneration_subplot <- bind_rows(data.raw$regeneration_subplot, data$regeneration_subplot)
-  data.raw$soil <- bind_rows(data.raw$soil, data$soil)
-  data.raw$vegetation <- bind_rows(data.raw$vegetation, data$vegetation)
-  data.raw$habitat <- bind_rows(data.raw$habitat, data$habitat)
+  # data.raw$soil <- bind_rows(data.raw$soil, data$soil)
+  # data.raw$vegetation <- bind_rows(data.raw$vegetation, data$vegetation)
+  # data.raw$habitat <- bind_rows(data.raw$habitat, data$habitat)
   
   remove(data)
   
 }
 
-# date.id <- unique(data.raw$plot$date)
-# 
-# plot.id <- unique(data.raw$plot$plotid)
-# 
-# plot.db <- tbl(KELuser, "plot") %>% 
-#   filter(plotid %in% plot.id & !date %in% date.id) %>%
-#   group_by(plotid) %>% 
-#   arrange(desc(date)) %>%
-#   filter(row_number() == 1) %>%
-#   select(plot_id = id, plotid, lng_old = lng, lat_old = lat, plotsize_old = plotsize, dbh_min_old = dbh_min) %>%
-#   inner_join(., tbl(KELuser, "tree") %>% filter(!onplot %in% 0), by = "plot_id") %>%
-#   mutate(n_pos = ifelse(is.na(x_m), 0, 1)) %>%
-#   collect() %>%
-#   group_by(plotid, lng_old, lat_old, plotsize_old, dbh_min_old) %>%
-#   summarise(n_pos = sum(n_pos),
-#             n_trees = n(),
-#             coef_old = (n_pos/n_trees) * 100) %>%
-#   ungroup()
-# 
-# tree.db <- tbl(KELuser, "tree") %>% 
-#   inner_join(., 
-#              tbl(KELuser, "plot") %>% 
-#                filter(plotid %in% plot.id & !date %in% date.id) %>%
-#                group_by(plotid) %>%
-#                arrange(desc(date)) %>%
-#                filter(row_number() == 1), 
-#              by = c("plot_id" = "id")) %>% 
-#   collect()
-
-# 2. check ----------------------------------------------------------------
+# 1. 2. check -------------------------------------------------------------
 
 error.list <- check_structural_data(data = data.raw, fk = fk.list)
 
@@ -145,7 +126,7 @@ data.map <- tbl(KELuser, "tree") %>%
   arrange(plotid, date) %>%
   unite(., plotid, c(date, plotid), sep = "-")
 
-pdf("treePosCheck.pdf", width = 9.2, height = 8, pointsize = 12, onefile = T)
+pdf("data/control/structure/treePosCheck.pdf", width = 9.2, height = 8, pointsize = 12, onefile = T)
 
 for(PL in unique(data.map$plotid)){
   
@@ -155,7 +136,7 @@ for(PL in unique(data.map$plotid)){
 
 dev.off()
 
-# 3. clean ----------------------------------------------------------------
+# 1. 3. clean -------------------------------------------------------------
 
 ## 'plottype' & 'dbh_min' needs to be checked/edited manually
 ## plot 'census' too in case of exceptions (missing trees/positions)
@@ -178,9 +159,9 @@ ggplot(data.raw$tree) +
 
 data.clean <- clean_structural_data(data = data.raw)
 
-# 4. export ---------------------------------------------------------------
+# 1. 4. export ------------------------------------------------------------
 
-path <- "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2022/clean/"
+path <- "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/clean/"
 
 for (i in names(data.clean)) {
   
@@ -190,6 +171,6 @@ for (i in names(data.clean)) {
   
 }
 
-# disconnect --------------------------------------------------------------
+# ! close database connection ---------------------------------------------
 
 poolClose(KELadmin);poolClose(KELuser)
