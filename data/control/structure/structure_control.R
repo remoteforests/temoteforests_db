@@ -1,9 +1,10 @@
-# setup -------------------------------------------------------------------
+# 0. setup ----------------------------------------------------------------
 
 library(pool);library(tidyverse)
 
 source("pw.R")
-source("new_fc.R")
+
+source("data/control/structure/structure_control_fc.R")
 
 fk <- dbGetQuery(KELuser, "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename LIKE '%fk'")
 
@@ -15,20 +16,22 @@ for (i in fk$tablename) {
   
 }
 
-# STRUCTURAL DATA ---------------------------------------------------------
+# 1. STRUCTURAL DATA ------------------------------------------------------
 
-# 1. read -----------------------------------------------------------------
+# 1. 1. read --------------------------------------------------------------
 
 data.raw <- list()
 
-# 1. 1. fieldmap ----------------------------------------------------------
+# 1. 1. 1. fieldmap -------------------------------------------------------
 
 ## first: check all 'Note' columns for additional information;
 ## second: remove duplicate 'Height_m' column in 'Trees' sheet;
 ## third: manually convert 'Date' column in 'Plots' sheet to 'Date (short)' format and check it against 'EDIT_USER' & 'EDIT_DATE' columns -> fill in if necessary;
 ## fourth: check 'Measured' column in 'Trees' sheet against 'EDIT_USER' & 'EDIT_DATE' columns -> fill in if necessary;
 
-fm <- list.files(path = "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/fieldmap/new", pattern = ".xlsx", full.names = T)
+path <- "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/fieldmap/new"
+
+fm <- list.files(path, pattern = ".xlsx", full.names = T)
 
 for (i in fm) {
   
@@ -44,11 +47,13 @@ for (i in fm) {
   
 }
 
-# openxlsx::write.xlsx(data.raw$tms, "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/2023_TMS.xlsx")
+# openxlsx::write.xlsx(data.raw$tms, "data/control/structure/TMS.xlsx")
 
-# 1. 2. forms -------------------------------------------------------------
+# 1. 1. 2. forms ----------------------------------------------------------
 
-fr <- list.files(path = "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/raw/todo", pattern = ".xlsx", full.names = T)
+path <- "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/raw"
+
+fr <- list.files(path, pattern = ".xlsx", full.names = T)
 
 for (i in fr) {
   
@@ -65,7 +70,7 @@ for (i in fr) {
   
 }
 
-# 2. check ----------------------------------------------------------------
+# 1. 2. check -------------------------------------------------------------
 
 error.list <- check_structural_data(data = data.raw, fk = fk.list)
 
@@ -121,7 +126,7 @@ data.map <- tbl(KELuser, "tree") %>%
   arrange(plotid, date) %>%
   unite(., plotid, c(date, plotid), sep = "-")
 
-pdf("treePosCheck.pdf", width = 9.2, height = 8, pointsize = 12, onefile = T)
+pdf("data/control/structure/treePosCheck.pdf", width = 9.2, height = 8, pointsize = 12, onefile = T)
 
 for(PL in unique(data.map$plotid)){
   
@@ -131,7 +136,7 @@ for(PL in unique(data.map$plotid)){
 
 dev.off()
 
-# 3. clean ----------------------------------------------------------------
+# 1. 3. clean -------------------------------------------------------------
 
 ## 'plottype' & 'dbh_min' needs to be checked/edited manually
 ## plot 'census' too in case of exceptions (missing trees/positions)
@@ -154,9 +159,9 @@ ggplot(data.raw$tree) +
 
 data.clean <- clean_structural_data(data = data.raw)
 
-# 4. export ---------------------------------------------------------------
+# 1. 4. export ------------------------------------------------------------
 
-path <- "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2022/clean/"
+path <- "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/clean/"
 
 for (i in names(data.clean)) {
   
@@ -166,6 +171,6 @@ for (i in names(data.clean)) {
   
 }
 
-# disconnect --------------------------------------------------------------
+# ! close database connection ---------------------------------------------
 
 poolClose(KELadmin);poolClose(KELuser)

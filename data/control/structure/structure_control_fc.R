@@ -498,7 +498,7 @@ clean_structural_data <- function(data){
              mort_agent %in% 99 & status_new %in% 0 ~ 71,
              mort_agent %in% 99 & status_new %in% 15 ~ 21,
              TRUE ~ mort_agent)) %>%
-    select(date, treeid, mort_agent)
+    distinct(., date, treeid, mort_agent)
   
   # tree
   
@@ -629,7 +629,8 @@ clean_structural_data <- function(data){
     filter(!is.na(microsite)) %>%
     mutate(count = ifelse(is.na(count), 1, count),
            count = ifelse(microsite %in% c(11, 20, 23, 25, 26, 29, 32:41, 44:47), NA, count),
-           method = 2)
+           method = 2) %>%
+    select(-pid, -tid)
   
   # deadwood
   
