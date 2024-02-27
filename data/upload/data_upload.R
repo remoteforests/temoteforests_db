@@ -1,6 +1,12 @@
 # setup -------------------------------------------------------------------
 
-library(pool);library(tidyverse);library(zoo)
+# R 3.6.3 (2020-02-29)
+
+library(openxlsx) # 4.1.4
+library(pool) # 0.1.4.3
+library(RPostgreSQL) # 0.6-2 (DBI 1.1.0)
+library(tidyverse) # 1.3.0 (dplyr 1.0.7, forcats 0.5.0, ggplot2 3.3.5, purr 0.3.4, readr 1.3.1, stringr 1.4.0, tibble 3.0.0, tidyr 1.0.2)
+library(zoo) # 1.8-7
 
 source("pw.R")
 
@@ -152,7 +158,7 @@ setwd("C:/Users/Ondrej_Vostarek/Downloads")
 # 
 #   colnames(can.data) <- can.names[1,]
 # 
-#   openxlsx::write.xlsx(x = can.data, file = paste0(substr(i, 1, nchar(i) - 7), "clean.xlsx"), row.names = F)
+#   write.xlsx(x = can.data, file = paste0(substr(i, 1, nchar(i) - 7), "clean.xlsx"), row.names = F)
 #
 # }
 # 
@@ -164,7 +170,7 @@ canopy.df <- tibble()
 
 for (i in canopy.list) {
   
-  can.new <- openxlsx::read.xlsx(i, sheet = 2)
+  can.new <- read.xlsx(i, sheet = 2)
   
   canopy.df <- bind_rows(canopy.df, can.new)
   
@@ -191,7 +197,7 @@ setwd("C:/Users/Ondrej_Vostarek/Downloads")
 
 ### Sheet name, date and plot codes need to be adjusted; column names, species and decay codes checked. 
 
-data.list$deadwood_tree <- openxlsx::read.xlsx(".xlsx", sheet = "") %>%
+data.list$deadwood_tree <- read.xlsx(".xlsx", sheet = "") %>%
   select(plotid = , object_id = , species = , decay = , length_m = , volume_m3 = ) %>%
   mutate(date = ,
   plotid = case_when(
@@ -219,7 +225,7 @@ data.list$deadwood_tree <- openxlsx::read.xlsx(".xlsx", sheet = "") %>%
   volume_m3 = round(volume_m3, 5)) %>%
   filter(!plotid %in% NA)
 
-data.list$deadwood_position <- openxlsx::read.xlsx(".xlsx", sheet = "") %>%
+data.list$deadwood_position <- read.xlsx(".xlsx", sheet = "") %>%
   select(plotid = , object_id = , end_number = , diameter_mm = , x_m = , y_m = , z_m = ) %>%
   mutate(date = ,
     plotid = case_when(
