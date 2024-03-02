@@ -257,7 +257,7 @@ paramsCalculate <- function(data, params){
       
       plot.key <- plots %>% mutate(id = row_number()) %>% select(id, plotid) %>% deframe()
       
-      data.params$nearest_plot <- reshape2::melt(as.matrix(p), varnames = c("plotid", "second_plot"), value.name = "nearest_plot") %>%
+      data.params$nearest_plot <- melt(as.matrix(p), varnames = c("plotid", "second_plot"), value.name = "nearest_plot") %>%
         filter(!nearest_plot %in% c("NaN", NA)) %>%
         mutate(plotid = plot.key[plotid],
                second_plot = plot.key[second_plot]) %>%
@@ -785,8 +785,8 @@ paramsCalculate <- function(data, params){
       
       plots <- data$temperature
       
-      plots$temperature_annual <- stats::predict(model_annual,plots)^2-100
-      plots$temperature_vegetation <- stats::predict(model_vegetation,plots)^2-100
+      plots$temperature_annual <- predict(model_annual,plots)^2-100
+      plots$temperature_vegetation <- predict(model_vegetation,plots)^2-100
       
       data.params$temperature <- plots %>% 
         select(plot_id, temp_mean_year = temperature_annual, temp_mean_vegetseason = temperature_vegetation) %>%

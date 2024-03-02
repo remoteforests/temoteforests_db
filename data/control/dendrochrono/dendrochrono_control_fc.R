@@ -9,7 +9,7 @@ read_dendro_data <- function(st){
   data.list$core <- read.table(paste("core", st, "csv", sep = "."), sep = ",", header = T, stringsAsFactors = F)
   
   if(!identical(c("date", "treeid", "coreht_m",	"missing_mm", "missing_years", "corestatus",
-                  "crossdated",	"cormach"), 
+                  "crossdated",	"cormach", "mortality_date"), 
                 names(data.list$core))) 
     
     stop('The core data do not match with required table format.')
@@ -23,7 +23,8 @@ read_dendro_data <- function(st){
            missing_years = as.numeric(missing_years),
            corestatus = as.numeric(corestatus),
            crossdated = as.numeric(crossdated),
-           cormach = as.numeric(cormach))
+           cormach = as.numeric(cormach),
+           mortality_date = as.character(mortality_date))
   
   # ring
   
