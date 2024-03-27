@@ -6,7 +6,7 @@ read_fm_data <- function(file){
   
   # plot
   
-  data.list$plot <- read.xlsx(paste0(file), sheet = "Plots", detectDates = T) %>%
+  data.list$plot <- read.xlsx(file, sheet = "Plots", detectDates = T) %>%
     filter(!is.na(Date)) %>%
     select(pid = ID, Date, Plotid, plotsize = Area_m2, Slope, Aspect, Landform, Hillform) %>%
     mutate(pid = as.numeric(pid),
@@ -22,7 +22,7 @@ read_fm_data <- function(file){
   
   # tms
   
-  data.list$tms <- read.xlsx(paste0(file), sheet = "TMS") %>%
+  data.list$tms <- read.xlsx(file, sheet = "TMS") %>%
     select(1:10) %>%
     mutate(FM = substr(file, nchar(file) - 17, nchar(file) - 5))
   
@@ -30,9 +30,9 @@ read_fm_data <- function(file){
   
   pid <- data.list$plot %>% pull(pid)
     
-  sp <- read.xlsx(paste0(file), sheet = "lookup_species") %>% select(Species = ID, species = VALUE1)
+  sp <- read.xlsx(file, sheet = "lookup_species") %>% select(Species = ID, species = VALUE1)
   
-  data.list$tree <- read.xlsx(paste0(file), sheet = "Trees") %>%
+  data.list$tree <- read.xlsx(file, sheet = "Trees") %>%
     filter(IDPlots %in% pid & !is.na(Measured)) %>%
     left_join(., sp, by = "Species") %>%
     select(pid = IDPlots, tid = ID, x_m, y_m, Status, Growth, Layer, species, 
@@ -60,7 +60,7 @@ read_fm_data <- function(file){
    
   # mortality
   
-  data.list$mortality <- read.xlsx(paste0(file), sheet = "Mortality") %>%
+  data.list$mortality <- read.xlsx(file, sheet = "Mortality") %>%
     select(pid = IDPlots, tid = IDTrees, mort_agent = Agent) %>%
     mutate(pid = as.numeric(pid), 
            tid = as.numeric(tid), 
@@ -68,7 +68,7 @@ read_fm_data <- function(file){
   
   # microsites
   
-  data.list$microsites <- read.xlsx(paste0(file), sheet = "Microsites") %>%
+  data.list$microsites <- read.xlsx(file, sheet = "Microsites") %>%
     select(pid = IDPlots, tid = IDTrees, Microsite, Count) %>%
     mutate(pid = as.numeric(pid), 
            tid = as.numeric(tid), 
@@ -79,7 +79,7 @@ read_fm_data <- function(file){
   
   # regref
   
-  data.list$regref <- read.xlsx(paste0(file), sheet = "RegRefPoints") %>%
+  data.list$regref <- read.xlsx(file, sheet = "RegRefPoints") %>%
     filter(IDPlots %in% pid) %>% 
     select(pid = IDPlots, subplot_n = ID, x_m, y_m)
   
@@ -114,7 +114,7 @@ read_fr_data <- function(file){
   
   # deadwood
   
-  data.list$deadwood <- read.xlsx(paste0(file), sheet = "deadwood")
+  data.list$deadwood <- read.xlsx(file, sheet = "deadwood")
   
   if(!identical(c("date", "plotid", "transect",	"species", "dbh_mm", "decay"),
                 names(data.list$deadwood)))
@@ -131,7 +131,7 @@ read_fr_data <- function(file){
   
   # regeneration
   
-  data.list$regeneration <- read.xlsx(paste0(file), sheet = "regeneration")
+  data.list$regeneration <- read.xlsx(file, sheet = "regeneration")
   
   if(!identical(c("date", "plotid", "species", "htclass", "regeneratedon", "count"),
                 names(data.list$regeneration)))
@@ -148,7 +148,7 @@ read_fr_data <- function(file){
   
   # regeneration_subplot
   
-  data.list$regeneration_subplot <- read.xlsx(paste0(file), sheet = "regeneration_subplot")
+  data.list$regeneration_subplot <- read.xlsx(file, sheet = "regeneration_subplot")
   
   if(!identical(c("date", "plotid", "subplot_n", "subplotsize_m2", "species", "htclass",
                   "browsing",	"regeneratedon", "count"), 
@@ -169,7 +169,7 @@ read_fr_data <- function(file){
   
   # soil
   
-  # data.list$soil <- read.xlsx(paste0(file), sheet = "soil_profile")
+  # data.list$soil <- read.xlsx(file, sheet = "soil_profile")
   # 
   # if(!identical(c("date", "plotid", "sample",	"soil_horizon", "depth_cm"), 
   #               names(data.list$soil))) 
@@ -185,7 +185,7 @@ read_fr_data <- function(file){
   
   # vegetation
   
-  # data.list$vegetation <- read.xlsx(paste0(file), sheet = "vegetation", detectDates = T)
+  # data.list$vegetation <- read.xlsx(file, sheet = "vegetation", detectDates = T)
   # 
   # if(!identical(c("date", "sampling_date", "plotid", "large_gap",	"vegetationht", 
   #                 "vegetation_cover", "vaccinium_myrtillus_per", "rubus_per", 
@@ -215,7 +215,7 @@ read_fr_data <- function(file){
 
   # habitat
    
-  # data.list$habitat <- read.xlsx(paste0(file), sheet = "habitat", detectDates = T)
+  # data.list$habitat <- read.xlsx(file, sheet = "habitat", detectDates = T)
   # 
   # if(!identical(c("date", "sampling_date", "plotid",	"animal_species", "gender", "habitat_sign_type"), 
   #               names(data.list$habitat))) 
