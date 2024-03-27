@@ -1,12 +1,12 @@
 # setup -------------------------------------------------------------------
 
-# R 3.6.3 (2020-02-29)
+# R 4.2.3 (2023-03-15) "Shortstop Beagle"
 
-library(openxlsx) # 4.1.4
-library(pool) # 0.1.4.3
-library(RPostgreSQL) # 0.6-2 (DBI 1.1.0)
-library(tidyverse) # 1.3.0 (dplyr 1.0.7, forcats 0.5.0, ggplot2 3.3.5, purr 0.3.4, readr 1.3.1, stringr 1.4.0, tibble 3.0.0, tidyr 1.0.2)
-library(zoo) # 1.8-7
+library(openxlsx) # 4.2.5.2
+library(pool) # 1.0.3
+library(RPostgreSQL) # 0.7-6 (DBI 1.2.2)
+library(tidyverse) # 2.0.0 (dplyr 1.1.4, forcats 1.0.0, ggplot2 3.5.0, lubridate 1.9.3, purr 1.0.2, readr 2.1.5, stringr 1.5.1, tibble 3.2.1, tidyr 1.3.1)
+# library(zoo) # 1.8-12
 
 source("pw.R")
 
@@ -213,14 +213,14 @@ data.list$deadwood_tree <- read.xlsx(".xlsx", sheet = "") %>%
     species %in% 700 ~ "Fraxinus excelsior",
     species %in% 800 ~ "Sorbus aucuparia",
     species %in% 900 ~ "Ulmus",
-    TRUE ~ "99"),
+    .default = "99"),
   decay = case_when(
     decay %in% 100 ~ 1,
     decay %in% 200 ~ 2,
     decay %in% 300 ~ 3,
     decay %in% 400 ~ 4,
     decay %in% 500 ~ 5,
-    TRUE ~ 99),
+    .default = 99),
   length_m = round(length_m, 2),
   volume_m3 = round(volume_m3, 5)) %>%
   filter(!plotid %in% NA)
