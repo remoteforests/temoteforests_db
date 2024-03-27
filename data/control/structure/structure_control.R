@@ -1,11 +1,11 @@
 # 0. setup ----------------------------------------------------------------
 
-# R 3.6.3 (2020-02-29)
+# R 4.2.3 (2023-03-15) "Shortstop Beagle"
 
-library(openxlsx) # 4.1.4
-library(pool) # 0.1.4.3
-library(RPostgreSQL) # 0.6-2 (DBI 1.1.0)
-library(tidyverse) # 1.3.0 (dplyr 1.0.7, forcats 0.5.0, ggplot2 3.3.5, purr 0.3.4, readr 1.3.1, stringr 1.4.0, tibble 3.0.0, tidyr 1.0.2)
+library(openxlsx) # 4.2.5.2
+library(pool) # 1.0.3
+library(RPostgreSQL) # 0.7-6 (DBI 1.2.2)
+library(tidyverse) # 2.0.0 (dplyr 1.1.4, forcats 1.0.0, ggplot2 3.5.0, lubridate 1.9.3, purr 1.0.2, readr 2.1.5, stringr 1.5.1, tibble 3.2.1, tidyr 1.3.1)
 
 source("pw.R")
 
@@ -76,6 +76,18 @@ for (i in fr) {
   
 }
 
+# 1. 1. 3. previous census ------------------------------------------------
+
+old.plot.id <- tbl(KELuser, "plot") %>%
+  filter(plotid %in% local(unique(data.raw$plot$plotid)) & !date %in% local(unique(data.raw$plot$date))) %>%
+  select(plotid, date, id) %>%
+  collect() %>%
+  group_by(plotid) %>%
+  arrange(desc(date), .by_group = T) %>%
+  filter(row_number() == 1) %>%
+  ungroup() %>%
+  pull(id)
+
 # 1. 2. check -------------------------------------------------------------
 
 error.list <- check_structural_data(data = data.raw, fk = fk.list)
@@ -83,13 +95,7 @@ error.list <- check_structural_data(data = data.raw, fk = fk.list)
 ## additional tree position check
 
 p.check <- tbl(KELuser, "tree") %>%
-  inner_join(., tbl(KELuser, "plot") %>% 
-               filter(plotid %in% local(unique(data.raw$plot$plotid)) & !date %in% local(unique(data.raw$plot$date))) %>% 
-               arrange(plotid, desc(date)) %>%
-               group_by(plotid) %>%
-               filter(row_number() == 1) %>%
-               ungroup(),
-             by = c("plot_id" = "id")) %>%
+  filter(plot_id %in% old.plot.id) %>%
   select(treeid, x_m, y_m) %>%
   collect() %>%
   inner_join(., data.raw$tree %>% select(plotid, treeid, x_m, y_m), by = "treeid") %>%
@@ -102,15 +108,10 @@ p.check <- tbl(KELuser, "tree") %>%
   pull(plotid)
 
 data.map <- tbl(KELuser, "tree") %>%
-  inner_join(., tbl(KELuser, "plot") %>% 
-               filter(plotid %in% p.check & !date %in% local(unique(data.raw$plot$date))) %>%
-               arrange(plotid, desc(date)) %>%
-               group_by(plotid) %>%
-               filter(row_number() == 1) %>%
-               ungroup(),
-             by = c("plot_id" = "id")) %>%
-  filter(!is.na(x_m), !is.na(y_m),
+  filter(plot_id %in% old.plot.id,
+         !is.na(x_m), !is.na(y_m),
          !treetype %in% c("m", "x", "t", "g", "r")) %>%
+  inner_join(., tbl(KELuser, "plot") %>% filter(plotid %in% p.check), by = c("plot_id" = "id")) %>%
   select(date, plotid, treen, x_m, y_m, species, status, dbh_mm) %>%
   collect() %>%
   bind_rows(., data.raw$tree %>% filter(plotid %in% p.check) %>%
@@ -155,7 +156,7 @@ for (e in error) {
   print(
     ggplot(data.raw$regref %>% filter(plotid %in% e)) +
       geom_point(aes(x = x_m, y = y_m)) +
-      geom_point(aes(0, 0), shape = 3, color = "red", size = 3) +
+      annotate("point", x = 0, y = 0, shape = 3, color = "red", size = 3) +
       geom_text(aes(x_m + 0.5, y_m + 0.5, label = subplot_n), size = 3, color = "grey20") +
       ggtitle(e)
   )
@@ -173,7 +174,7 @@ for (PL in unique(data.raw$regref$plotid)) {
   print(
     ggplot(data.raw$regref %>% filter(plotid %in% PL & subplot_n %in% c(0:5))) +
       geom_point(aes(x = x_m, y = y_m)) +
-      geom_point(aes(0, 0), shape = 3, color = "red", size = 3) +
+      annotate("point", x = 0, y = 0, shape = 3, color = "red", size = 3) +
       geom_text(aes(x_m + 0.5, y_m + 0.5, label = subplot_n), size = 3, color = "grey20") +
       ggtitle(PL)
   )
@@ -187,12 +188,8 @@ dev.off()
 ## 'plottype' & 'dbh_min' needs to be checked/edited manually
 ## plot 'census' too in case of exceptions (missing trees/positions)
 
-tbl(KELuser, "plot") %>%
-  filter(plotid %in% local(unique(data.raw$plot$plotid)) & !date %in% local(unique(data.raw$plot$date))) %>% 
-  arrange(plotid, desc(date)) %>%
-  group_by(plotid) %>%
-  filter(row_number() == 1) %>%
-  ungroup() %>%
+tbl(KELuser, "plot") %>% 
+  filter(id %in% old.plot.id) %>%
   distinct(., plottype, dbh_min, census, plotsize)
 
 ggplot(data.raw$tree) + 

@@ -239,25 +239,15 @@ check_structural_data <- function(data, fk) {
   #' @param fk list of fk encodings extracted from database
   
   error.list <- list()
-  
+
   plot.check <- tbl(KELuser, "plot") %>% 
-    filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
-    arrange(plotid, desc(date)) %>%
-    group_by(plotid) %>%
-    filter(row_number() == 1) %>%
-    ungroup() %>%
+    filter(id %in% old.plot.id) %>%
     select(plotid, date_old = date, plotsize_old = plotsize) %>%
     collect() %>%
     right_join(., data$plot, by = "plotid")
   
   tree.check <- tbl(KELuser, "tree") %>%
-    inner_join(., tbl(KELuser, "plot") %>% 
-                 filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
-                 arrange(plotid, desc(date)) %>%
-                 group_by(plotid) %>%
-                 filter(row_number() == 1) %>%
-                 ungroup(),
-               by = c("plot_id" = "id")) %>%
+    filter(plot_id %in% old.plot.id) %>%
     select(treeid, status_old = status) %>%
     collect() %>%
     right_join(., data$tree, by = "treeid")
@@ -451,11 +441,11 @@ plotTree <- function(PL){
                                              "Corylus avellana" = "darkblue",
                                              "Others" = "grey"),
                        drop = FALSE) +
-    geom_point(aes(0, 0), shape = 3, color = "red", size = 3) +
-    geom_path(data = circleFun(r = 7.99), aes(x = X, y = Y), color = "black", size = 0.3) +
-    geom_path(data = circleFun(r = 12.62), aes(x = X, y = Y), color = "black", size = 0.3) +
-    geom_path(data = circleFun(r = 17.84), aes(x = X, y = Y), color = "black", size = 0.3) +
-    geom_path(data = circleFun(r = 21.85), aes(x = X, y = Y), color = "black", size = 0.3) +
+    annotate("point", x = 0, y = 0, shape = 3, color = "red", size = 3) +
+    geom_path(data = circleFun(r = 7.99), aes(x = X, y = Y), color = "black", linewidth = 0.3) +
+    geom_path(data = circleFun(r = 12.62), aes(x = X, y = Y), color = "black", linewidth = 0.3) +
+    geom_path(data = circleFun(r = 17.84), aes(x = X, y = Y), color = "black", linewidth = 0.3) +
+    geom_path(data = circleFun(r = 21.85), aes(x = X, y = Y), color = "black", linewidth = 0.3) +
     theme_bw() +
     geom_text(aes(x_m + 0.5, y_m + 0.5, label = treen), size = 3, color = "grey20") +
     ggtitle(PL)
@@ -470,11 +460,7 @@ clean_structural_data <- function(data){
   # plot
   
   data.clean$plot <- tbl(KELuser, "plot") %>%
-    filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
-    arrange(plotid, desc(date)) %>%
-    group_by(plotid) %>%
-    filter(row_number() == 1) %>%
-    ungroup() %>%
+    filter(id %in% old.plot.id) %>%
     select(plotid, country, location, stand, standshort, plot, subplot, lng, lat, plotsize_old = plotsize, dbh_min, plottype, foresttype, altitude_m, ownership) %>%
     collect() %>%
     right_join(., data$plot, by = "plotid") %>%
@@ -487,13 +473,7 @@ clean_structural_data <- function(data){
   # mortality
   
   data.clean$mortality <- tbl(KELuser, "tree") %>%
-    inner_join(., tbl(KELuser, "plot") %>% 
-                 filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
-                 arrange(plotid, desc(date)) %>%
-                 group_by(plotid) %>%
-                 filter(row_number() == 1) %>%
-                 ungroup(),
-               by = c("plot_id" = "id")) %>%
+    filter(plot_id %in% old.plot.id) %>%
     select(treeid, status_old = status) %>%
     collect() %>%
     inner_join(., data$tree %>% select(treeid, species, status_new = status), by = "treeid") %>%
@@ -505,29 +485,19 @@ clean_structural_data <- function(data){
              mort_agent %in% 99 & status_new %in% c(21:23) & species %in% "Picea abies" ~ 411,
              mort_agent %in% 99 & status_new %in% 0 ~ 71,
              mort_agent %in% 99 & status_new %in% 15 ~ 21,
-             TRUE ~ mort_agent)) %>%
+             .default = mort_agent)) %>%
     distinct(., date, treeid, mort_agent)
   
   # tree
   
   data.clean$tree <- tbl(KELuser, "tree") %>%
-    inner_join(., tbl(KELuser, "plot") %>% 
-                 filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
-                 arrange(plotid, desc(date)) %>%
-                 group_by(plotid) %>%
-                 filter(row_number() == 1) %>%
-                 ungroup(),
-               by = c("plot_id" = "id")) %>%
+    filter(plot_id %in% old.plot.id) %>%
     select(treeid, old_treen = treen, old_x = x_m) %>%
     collect() %>%
     right_join(., data$tree, by = "treeid") %>%
     inner_join(., data.clean$plot %>% select(plotid, plotsize, foresttype), by = "plotid") %>%
     inner_join(., tbl(KELuser, "plot") %>%
-                 filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
-                 arrange(plotid, desc(date)) %>%
-                 group_by(plotid) %>%
-                 filter(row_number() == 1) %>%
-                 ungroup() %>%
+                 filter(id %in% old.plot.id) %>%
                  select(plotid, plotsize_old = plotsize, dbh_min_old = dbh_min) %>%
                  collect(),
                by = "plotid") %>%
@@ -541,7 +511,7 @@ clean_structural_data <- function(data){
              plotsize %in% 1500 & distance_m <= 7.99 ~ 1,
              plotsize %in% 1500 & distance_m > 7.99 & distance_m <= 17.84 ~ 2,
              plotsize %in% 1500 & distance_m > 17.84 & distance_m <= 21.85 ~ 3,
-             TRUE ~ 0),
+             .default = 0),
            treetype = "0",
       census = case_when(
              !treetype %in% "0" ~ 0,
@@ -560,7 +530,7 @@ clean_structural_data <- function(data){
              is.na(old_treen) & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm < dbh_min_old ~ 3,
              is.na(old_treen) & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm >= dbh_min_old & dbh_mm <= dbh_min_old + 50 ~ 1,
              is.na(old_treen) & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm > dbh_min_old + 50 ~ 2,
-             TRUE ~ 0),
+             .default = 0),
       growth = ifelse(!status %in% c(1:4), -1, growth),
       growth = ifelse(status %in% c(1:4) & is.na(growth), 99, growth),
       layer = ifelse(!status %in% c(1:4), -1, layer),
@@ -578,13 +548,7 @@ clean_structural_data <- function(data){
   # tree_quality
   
   tree.db <- tbl(KELuser, "tree") %>%
-    inner_join(., tbl(KELuser, "plot") %>% 
-                 filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
-                 arrange(plotid, desc(date)) %>%
-                 group_by(plotid) %>%
-                 filter(row_number() == 1) %>%
-                 ungroup(),
-               by = c("plot_id" = "id")) %>%
+    filter(plot_id %in% old.plot.id) %>%
     select(treeid, onplot, treetype, x_m, y_m, status, growth, layer, species, dbh_mm, height_m, decay, decayht) %>%
     collect()
     
