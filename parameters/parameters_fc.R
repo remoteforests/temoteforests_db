@@ -168,13 +168,13 @@ paramsGetData <- function(plot.id, params){
         group_by(plotid) %>% filter(n() > 1) %>% ungroup() %>%
         select(plot_id = id, plotid, date, census, plottype, plotsize, dbh_min) %>%
         collect() %>%
-        arrange(plotid, date) %>%
         group_by(plotid) %>%
+        arrange(date, .by_group = T) %>%
         mutate(use = ifelse(census %in% c(5, 6, 7), 0, 1),
                use = case_when(
                  row_number() == 1 & lead(use, 1) %in% 0 ~ 0,
                  row_number() == 2 & lead(use, 1) %in% 1 ~ 1,
-                 TRUE ~ use)) %>%
+                 .default = use)) %>%
         filter(plottype %in% c(3, 4),
                use %in% 1) %>%
         filter(n() > 1) %>%
@@ -354,7 +354,7 @@ paramsCalculate <- function(data, params){
         group_by(plot_id, species) %>%
         summarise(ba = sum(ba) * 10000 / first(plotsize)) %>%
         group_by(plot_id) %>%
-        arrange(desc(ba)) %>%
+        arrange(desc(ba), .by_group = T) %>%
         filter(row_number() == 1) %>%
         ungroup() %>%
         select(plot_id, dominant_species = species)
@@ -483,16 +483,16 @@ paramsCalculate <- function(data, params){
       data.params$core_params <- data$core %>% 
         group_by(date, plotid, treeid, subcore) %>%                            
         summarise(age = sum(n(), first(missing_years))) %>%
-        arrange(treeid, desc(age)) %>%
         group_by(treeid) %>%
+        arrange(desc(age), .by_group = T) %>%
         filter(row_number() == 1) %>%
         group_by(plotid) %>%
         mutate(age = ifelse(date %in% max(date), age - (max(date) - min(date)), age),
                date = min(date)) %>%
         ungroup() %>%
         inner_join(., tbl(KELuser, "plot") %>% select(plot_id = id, date, plotid), by = c("date", "plotid"), copy = T) %>%
-        arrange(plot_id, desc(age)) %>%
         group_by(plot_id) %>%
+        arrange(desc(age), .by_group = T) %>%
         summarise(age_max = max(age),
                   age_5oldest = mean(age[1:5]),
                   age_90quantile = quantile(age, 0.90),
@@ -680,7 +680,7 @@ paramsCalculate <- function(data, params){
         select(plot_id, date, treeid, treetype, onplot, x_m, y_m, census, status, dbh_mm) %>%
         collect() %>%
         group_by(treeid) %>%
-        arrange(desc(date)) %>%
+        arrange(desc(date), .by_group = T) %>%
         mutate(treetype = first(treetype),
                onplot = first(onplot[!onplot %in% 99]),
                x_m = first(x_m[!is.na(x_m)]),
@@ -690,11 +690,11 @@ paramsCalculate <- function(data, params){
                status_group = case_when(
                  is.na(status_group) & lead(status_group, 1) %in% 0 ~ 0,
                  is.na(status_group) & lag(status_group, 1) %in% 1 ~ 1,
-                 TRUE ~ status_group),
+                 .default = status_group),
                status_group = case_when(
                  is.na(status_group) & lead(status_group, 1) %in% 0 ~ 0,
                  is.na(status_group) & lag(status_group, 1) %in% 1 ~ 1,
-                 TRUE ~ status_group),
+                 .default = status_group),
                status_group = ifelse(row_number() == 2 & status_group %in% c(0, NA) & lag(status_group, 1) %in% 1, 1, status_group),
                status_group = ifelse(row_number() == 3 & status_group %in% c(0, NA) & lag(status_group, 1) %in% 1, 1, status_group),
                status_na = ifelse(is.na(status_group), 1, 0),
@@ -703,18 +703,18 @@ paramsCalculate <- function(data, params){
                  is.na(dbh_mm) & row_number() == 1 ~ first(dbh_mm[!is.na(dbh_mm)]),
                  is.na(dbh_mm) & row_number() == 2 ~ as.integer(round(mean(dbh_mm, na.rm = T), 0)),
                  is.na(dbh_mm) & row_number() == 3 ~ last(dbh_mm[!is.na(dbh_mm)]),
-                 TRUE ~ dbh_mm)) %>%
+                 .default = dbh_mm)) %>%
         filter(!status_na %in% 1,
                !is.na(dbh_mm)) %>%
         mutate(
           dbh_mm = case_when(
             row_number() == 2 & status_group %in% 0 & lag(status_group, 1) %in% 0 & lag(dbh_mm, 1) > dbh_mm ~ lag(dbh_mm, 1),
             row_number() == 2 & status_group %in% 1 & lag(status_group, 1) %in% 1 & lag(dbh_mm, 1) < dbh_mm ~ lag(dbh_mm, 1),
-            TRUE ~ dbh_mm),
+            .default = dbh_mm),
           dbh_mm = case_when(
             row_number() == 3 & status_group %in% 0 & lag(status_group, 1) %in% 0 & lag(dbh_mm, 1) > dbh_mm ~ lag(dbh_mm, 1),
             row_number() == 3 & status_group %in% 1 & lag(status_group, 1) %in% 1 & lag(dbh_mm, 1) < dbh_mm ~ lag(dbh_mm, 1),
-            TRUE ~ dbh_mm)) %>%
+            .default = dbh_mm)) %>%
         filter(treetype %in% "0",
                !onplot %in% c(0, NA),
                status_group %in% 1) %>% 
@@ -735,7 +735,7 @@ paramsCalculate <- function(data, params){
               summarise(n = n()) %>% 
               group_by(plotid) %>%
               filter(n() > 1) %>%
-              arrange(date) %>%
+              arrange(date, .by_group = T) %>%
               mutate(mortality = ifelse(row_number() == 2, 1 - ((n/lag(n, 1))^(1/int)), NA),
                      mortality = round(mortality * 100, 2)) %>%
               ungroup() %>%
@@ -750,7 +750,7 @@ paramsCalculate <- function(data, params){
               summarise(n = n()) %>% 
               group_by(plotid) %>%
               filter(n() > 1) %>%
-              arrange(date) %>%
+              arrange(date, .by_group = T) %>%
               mutate(mortality = ifelse(row_number() == 2, 1 - ((n/lag(n, 1))^(1/int)), NA),
                      mortality = round(mortality * 100, 2)) %>%
               ungroup() %>%
@@ -758,14 +758,14 @@ paramsCalculate <- function(data, params){
               select(plot_id, mortality),
             x %>% filter(n %in% c(2,3)) %>%
               group_by(treeid) %>%
-              arrange(desc(date)) %>%
+              arrange(desc(date), .by_group = T) %>%
               mutate(census = first(census)) %>%
               filter(census %in% 0) %>%
               group_by(plot_id, date, plotid, int) %>%
               summarise(n = n()) %>% 
               group_by(plotid) %>%
               filter(n() > 1) %>%
-              arrange(date) %>%
+              arrange(date, .by_group = T) %>%
               mutate(mortality = ifelse(row_number() == 2, 1 - ((n/lag(n, 1))^(1/int)), NA),
                      mortality = round(mortality * 100, 2)) %>%
               ungroup() %>%
