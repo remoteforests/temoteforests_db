@@ -6,7 +6,7 @@ read_fm_data <- function(file){
   
   # plot
   
-  data.list$plot <- read.xlsx(paste0(file), sheet = "Plots", detectDates = T) %>%
+  data.list$plot <- read.xlsx(file, sheet = "Plots", detectDates = T) %>%
     filter(!is.na(Date)) %>%
     select(pid = ID, Date, Plotid, plotsize = Area_m2, Slope, Aspect, Landform, Hillform) %>%
     mutate(pid = as.numeric(pid),
@@ -22,7 +22,7 @@ read_fm_data <- function(file){
   
   # tms
   
-  data.list$tms <- read.xlsx(paste0(file), sheet = "TMS") %>%
+  data.list$tms <- read.xlsx(file, sheet = "TMS") %>%
     select(1:10) %>%
     mutate(FM = substr(file, nchar(file) - 17, nchar(file) - 5))
   
@@ -30,9 +30,9 @@ read_fm_data <- function(file){
   
   pid <- data.list$plot %>% pull(pid)
     
-  sp <- read.xlsx(paste0(file), sheet = "lookup_species") %>% select(Species = ID, species = VALUE1)
+  sp <- read.xlsx(file, sheet = "lookup_species") %>% select(Species = ID, species = VALUE1)
   
-  data.list$tree <- read.xlsx(paste0(file), sheet = "Trees") %>%
+  data.list$tree <- read.xlsx(file, sheet = "Trees") %>%
     filter(IDPlots %in% pid & !is.na(Measured)) %>%
     left_join(., sp, by = "Species") %>%
     select(pid = IDPlots, tid = ID, x_m, y_m, Status, Growth, Layer, species, 
@@ -60,7 +60,7 @@ read_fm_data <- function(file){
    
   # mortality
   
-  data.list$mortality <- read.xlsx(paste0(file), sheet = "Mortality") %>%
+  data.list$mortality <- read.xlsx(file, sheet = "Mortality") %>%
     select(pid = IDPlots, tid = IDTrees, mort_agent = Agent) %>%
     mutate(pid = as.numeric(pid), 
            tid = as.numeric(tid), 
@@ -68,7 +68,7 @@ read_fm_data <- function(file){
   
   # microsites
   
-  data.list$microsites <- read.xlsx(paste0(file), sheet = "Microsites") %>%
+  data.list$microsites <- read.xlsx(file, sheet = "Microsites") %>%
     select(pid = IDPlots, tid = IDTrees, Microsite, Count) %>%
     mutate(pid = as.numeric(pid), 
            tid = as.numeric(tid), 
@@ -79,7 +79,7 @@ read_fm_data <- function(file){
   
   # regref
   
-  data.list$regref <- read.xlsx(paste0(file), sheet = "RegRefPoints") %>%
+  data.list$regref <- read.xlsx(file, sheet = "RegRefPoints") %>%
     filter(IDPlots %in% pid) %>% 
     select(pid = IDPlots, subplot_n = ID, x_m, y_m)
   
@@ -114,7 +114,7 @@ read_fr_data <- function(file){
   
   # deadwood
   
-  data.list$deadwood <- read.xlsx(paste0(file), sheet = "deadwood")
+  data.list$deadwood <- read.xlsx(file, sheet = "deadwood")
   
   if(!identical(c("date", "plotid", "transect",	"species", "dbh_mm", "decay"),
                 names(data.list$deadwood)))
@@ -131,7 +131,7 @@ read_fr_data <- function(file){
   
   # regeneration
   
-  data.list$regeneration <- read.xlsx(paste0(file), sheet = "regeneration")
+  data.list$regeneration <- read.xlsx(file, sheet = "regeneration")
   
   if(!identical(c("date", "plotid", "species", "htclass", "regeneratedon", "count"),
                 names(data.list$regeneration)))
@@ -148,7 +148,7 @@ read_fr_data <- function(file){
   
   # regeneration_subplot
   
-  data.list$regeneration_subplot <- read.xlsx(paste0(file), sheet = "regeneration_subplot")
+  data.list$regeneration_subplot <- read.xlsx(file, sheet = "regeneration_subplot")
   
   if(!identical(c("date", "plotid", "subplot_n", "subplotsize_m2", "species", "htclass",
                   "browsing",	"regeneratedon", "count"), 
@@ -169,7 +169,7 @@ read_fr_data <- function(file){
   
   # soil
   
-  # data.list$soil <- read.xlsx(paste0(file), sheet = "soil_profile")
+  # data.list$soil <- read.xlsx(file, sheet = "soil_profile")
   # 
   # if(!identical(c("date", "plotid", "sample",	"soil_horizon", "depth_cm"), 
   #               names(data.list$soil))) 
@@ -185,7 +185,7 @@ read_fr_data <- function(file){
   
   # vegetation
   
-  # data.list$vegetation <- read.xlsx(paste0(file), sheet = "vegetation", detectDates = T)
+  # data.list$vegetation <- read.xlsx(file, sheet = "vegetation", detectDates = T)
   # 
   # if(!identical(c("date", "sampling_date", "plotid", "large_gap",	"vegetationht", 
   #                 "vegetation_cover", "vaccinium_myrtillus_per", "rubus_per", 
@@ -215,7 +215,7 @@ read_fr_data <- function(file){
 
   # habitat
    
-  # data.list$habitat <- read.xlsx(paste0(file), sheet = "habitat", detectDates = T)
+  # data.list$habitat <- read.xlsx(file, sheet = "habitat", detectDates = T)
   # 
   # if(!identical(c("date", "sampling_date", "plotid",	"animal_species", "gender", "habitat_sign_type"), 
   #               names(data.list$habitat))) 
@@ -239,25 +239,15 @@ check_structural_data <- function(data, fk) {
   #' @param fk list of fk encodings extracted from database
   
   error.list <- list()
-  
+
   plot.check <- tbl(KELuser, "plot") %>% 
-    filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
-    arrange(plotid, desc(date)) %>%
-    group_by(plotid) %>%
-    filter(row_number() == 1) %>%
-    ungroup() %>%
+    filter(id %in% old.plot.id) %>%
     select(plotid, date_old = date, plotsize_old = plotsize) %>%
     collect() %>%
     right_join(., data$plot, by = "plotid")
   
   tree.check <- tbl(KELuser, "tree") %>%
-    inner_join(., tbl(KELuser, "plot") %>% 
-                 filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
-                 arrange(plotid, desc(date)) %>%
-                 group_by(plotid) %>%
-                 filter(row_number() == 1) %>%
-                 ungroup(),
-               by = c("plot_id" = "id")) %>%
+    filter(plot_id %in% old.plot.id) %>%
     select(treeid, status_old = status) %>%
     collect() %>%
     right_join(., data$tree, by = "treeid")
@@ -451,11 +441,11 @@ plotTree <- function(PL){
                                              "Corylus avellana" = "darkblue",
                                              "Others" = "grey"),
                        drop = FALSE) +
-    geom_point(aes(0, 0), shape = 3, color = "red", size = 3) +
-    geom_path(data = circleFun(r = 7.99), aes(x = X, y = Y), color = "black", size = 0.3) +
-    geom_path(data = circleFun(r = 12.62), aes(x = X, y = Y), color = "black", size = 0.3) +
-    geom_path(data = circleFun(r = 17.84), aes(x = X, y = Y), color = "black", size = 0.3) +
-    geom_path(data = circleFun(r = 21.85), aes(x = X, y = Y), color = "black", size = 0.3) +
+    annotate("point", x = 0, y = 0, shape = 3, color = "red", size = 3) +
+    geom_path(data = circleFun(r = 7.99), aes(x = X, y = Y), color = "black", linewidth = 0.3) +
+    geom_path(data = circleFun(r = 12.62), aes(x = X, y = Y), color = "black", linewidth = 0.3) +
+    geom_path(data = circleFun(r = 17.84), aes(x = X, y = Y), color = "black", linewidth = 0.3) +
+    geom_path(data = circleFun(r = 21.85), aes(x = X, y = Y), color = "black", linewidth = 0.3) +
     theme_bw() +
     geom_text(aes(x_m + 0.5, y_m + 0.5, label = treen), size = 3, color = "grey20") +
     ggtitle(PL)
@@ -470,11 +460,7 @@ clean_structural_data <- function(data){
   # plot
   
   data.clean$plot <- tbl(KELuser, "plot") %>%
-    filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
-    arrange(plotid, desc(date)) %>%
-    group_by(plotid) %>%
-    filter(row_number() == 1) %>%
-    ungroup() %>%
+    filter(id %in% old.plot.id) %>%
     select(plotid, country, location, stand, standshort, plot, subplot, lng, lat, plotsize_old = plotsize, dbh_min, plottype, foresttype, altitude_m, ownership) %>%
     collect() %>%
     right_join(., data$plot, by = "plotid") %>%
@@ -487,13 +473,7 @@ clean_structural_data <- function(data){
   # mortality
   
   data.clean$mortality <- tbl(KELuser, "tree") %>%
-    inner_join(., tbl(KELuser, "plot") %>% 
-                 filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
-                 arrange(plotid, desc(date)) %>%
-                 group_by(plotid) %>%
-                 filter(row_number() == 1) %>%
-                 ungroup(),
-               by = c("plot_id" = "id")) %>%
+    filter(plot_id %in% old.plot.id) %>%
     select(treeid, status_old = status) %>%
     collect() %>%
     inner_join(., data$tree %>% select(treeid, species, status_new = status), by = "treeid") %>%
@@ -505,29 +485,19 @@ clean_structural_data <- function(data){
              mort_agent %in% 99 & status_new %in% c(21:23) & species %in% "Picea abies" ~ 411,
              mort_agent %in% 99 & status_new %in% 0 ~ 71,
              mort_agent %in% 99 & status_new %in% 15 ~ 21,
-             TRUE ~ mort_agent)) %>%
+             .default = mort_agent)) %>%
     distinct(., date, treeid, mort_agent)
   
   # tree
   
   data.clean$tree <- tbl(KELuser, "tree") %>%
-    inner_join(., tbl(KELuser, "plot") %>% 
-                 filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
-                 arrange(plotid, desc(date)) %>%
-                 group_by(plotid) %>%
-                 filter(row_number() == 1) %>%
-                 ungroup(),
-               by = c("plot_id" = "id")) %>%
+    filter(plot_id %in% old.plot.id) %>%
     select(treeid, old_treen = treen, old_x = x_m) %>%
     collect() %>%
     right_join(., data$tree, by = "treeid") %>%
     inner_join(., data.clean$plot %>% select(plotid, plotsize, foresttype), by = "plotid") %>%
     inner_join(., tbl(KELuser, "plot") %>%
-                 filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
-                 arrange(plotid, desc(date)) %>%
-                 group_by(plotid) %>%
-                 filter(row_number() == 1) %>%
-                 ungroup() %>%
+                 filter(id %in% old.plot.id) %>%
                  select(plotid, plotsize_old = plotsize, dbh_min_old = dbh_min) %>%
                  collect(),
                by = "plotid") %>%
@@ -541,7 +511,7 @@ clean_structural_data <- function(data){
              plotsize %in% 1500 & distance_m <= 7.99 ~ 1,
              plotsize %in% 1500 & distance_m > 7.99 & distance_m <= 17.84 ~ 2,
              plotsize %in% 1500 & distance_m > 17.84 & distance_m <= 21.85 ~ 3,
-             TRUE ~ 0),
+             .default = 0),
            treetype = "0",
       census = case_when(
              !treetype %in% "0" ~ 0,
@@ -560,7 +530,7 @@ clean_structural_data <- function(data){
              is.na(old_treen) & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm < dbh_min_old ~ 3,
              is.na(old_treen) & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm >= dbh_min_old & dbh_mm <= dbh_min_old + 50 ~ 1,
              is.na(old_treen) & !plotid %in% data.clean$plot$plotid[data.clean$plot$census %in% c(3, 6)] & dbh_mm > dbh_min_old + 50 ~ 2,
-             TRUE ~ 0),
+             .default = 0),
       growth = ifelse(!status %in% c(1:4), -1, growth),
       growth = ifelse(status %in% c(1:4) & is.na(growth), 99, growth),
       layer = ifelse(!status %in% c(1:4), -1, layer),
@@ -578,13 +548,7 @@ clean_structural_data <- function(data){
   # tree_quality
   
   tree.db <- tbl(KELuser, "tree") %>%
-    inner_join(., tbl(KELuser, "plot") %>% 
-                 filter(plotid %in% local(unique(data$plot$plotid)) & !date %in% local(unique(data$plot$date))) %>% 
-                 arrange(plotid, desc(date)) %>%
-                 group_by(plotid) %>%
-                 filter(row_number() == 1) %>%
-                 ungroup(),
-               by = c("plot_id" = "id")) %>%
+    filter(plot_id %in% old.plot.id) %>%
     select(treeid, onplot, treetype, x_m, y_m, status, growth, layer, species, dbh_mm, height_m, decay, decayht) %>%
     collect()
     
