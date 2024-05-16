@@ -1,0 +1,11 @@
+begin
+  
+  if (Trees['decay_wood'] <> NULL) and (Trees_old['decay_wood_old'] <> NULL) then begin
+  
+    if Trees['decay_wood'] < Trees_old['decay_wood_old'] then begin
+      showwarning('Decay wood is lower than the previous census. Please double-check.');
+    end;
+    
+  end;
+
+end.

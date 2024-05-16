@@ -1,0 +1,15 @@
+begin
+
+  if (Trees['DBH_mm'] <> NULL) and (Trees_old['dbh_old'] <> NULL) then begin
+  
+    if Trees['DBH_mm'] - (Trees_old['dbh_old'] * 0.95) < 0 then begin
+      showwarning('DBH is more than 5% smaller than the previous census. Please double-check.');
+    end;
+    
+    if Trees['DBH_mm'] - (Trees_old['dbh_old'] * 1.1) > 0 then begin
+      showwarning('DBH is more than 10% larger than the previous census. Please double-check.');
+    end;
+    
+  end;
+  
+end.

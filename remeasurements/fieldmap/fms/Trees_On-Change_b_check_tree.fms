@@ -1,0 +1,125 @@
+// Check whether tree information is fully filled
+
+var
+  //arr_err_mess: array [0..20] of string;
+  i, n_err: integer;
+
+begin
+
+  n_err := -1;
+  
+  // General errors
+  if (Trees['Species'] = NULL) then begin
+    n_err := n_err + 1;
+    //arr_err_mess[n_err] := 'Error: Tree species should be filled!';
+    if (n_err < 4) then begin
+      showerror('Error: Tree species should be filled!');
+    end;
+  end;
+  
+  if (Trees['status'] = NULL) then begin
+    n_err := n_err + 1;
+    //arr_err_mess[n_err] := 'Error: Tree status should be filled!';
+    if (n_err < 4) then begin
+      showerror('Error: Tree status should be filled!');
+    end;
+  end;
+  
+  if (Trees['forked'] = NULL) then begin
+    n_err := n_err + 1;
+    //arr_err_mess[n_err] := 'Error: Tree fork presence should be filled!';
+    if (n_err < 4) then begin
+      showerror('Error: Tree fork presence should be filled!');
+    end;
+  end;
+  
+  if (Trees['DBH_mm'] = NULL) and not(Trees['status'] in [0, 10, 14, 16]) then begin
+    n_err := n_err + 1;
+    //arr_err_mess[n_err] := 'Error: Tree DBH should be filled!';
+    if (n_err < 4) then begin
+      showerror('Error: Tree DBH should be filled!');
+    end;
+  end;
+  
+  // Errors for alive trees
+  if (Trees['status'] in [1, 2, 3, 4]) then begin
+  
+    if (Trees['growth'] = NULL) then begin
+      n_err := n_err + 1;
+      //arr_err_mess[n_err] := 'Error: Tree growth should be filled!';
+      if (n_err < 4) then begin
+        showerror('Error: Tree growth should be filled!');
+      end;
+    end;
+    
+    if (Trees['layer'] = NULL) then begin
+      n_err := n_err + 1;
+      //arr_err_mess[n_err] := 'Error: Tree layer should be filled!';
+      if (n_err < 4) then begin
+        showerror('Error: Tree layer should be filled!');
+      end;
+    end;
+    
+  end;
+  
+  // Errors for dead trees
+  if not(Trees['status'] in [1, 2, 3, 4]) then begin
+  
+    if (Trees['decay'] = NULL) then begin
+      n_err := n_err + 1;
+      //arr_err_mess[n_err] := 'Error: Tree decay should be filled!';
+      if (n_err < 4) then begin
+        showerror('Error: Tree decay should be filled!');
+      end;
+    end;  
+    
+    if (Trees['decay_wood'] = NULL) then begin
+      n_err := n_err + 1;
+      //arr_err_mess[n_err] := 'Error: Tree decay wood should be filled!';
+      if (n_err < 4) then begin
+        showerror('Error: Tree decay wood should be filled!');
+      end;
+    end;
+    
+    if (Trees['decayht'] = NULL) then begin
+      n_err := n_err + 1;
+      //arr_err_mess[n_err] := 'Error: Tree decay height should be filled!';
+      if (n_err < 4) then begin
+        showerror('Error: Tree decay height should be filled!');
+      end;
+    end;
+    
+    if (Trees_old['status_old'] in [1, 2, 3, 4]) and (Mortality['mort_agent'] = NULL) then begin
+      n_err := n_err + 1;
+      //arr_err_mess[n_err] := 'Error: Mortality agent should be filled!';
+      if (n_err < 4) then begin
+        showerror('Error: Mortality agent should be filled!');
+      end;
+    end; 
+  
+  end;
+  
+  // Display errors
+  if (n_err >= 0) then begin
+    Trees['RGB'] := '255,255,255';
+    Trees['measured'] := 0;
+    
+    //for i := 0 to Variant2Integer(Min(n_err, 4)) do begin
+    //  showerror( arr_err_mess[i] );
+    //end;
+    
+  end else begin
+  
+    if (Trees_old['status_old'] in [1, 2, 3, 4]) and not(Trees['status'] in [1, 2, 3, 4]) then begin
+      Trees['RGB'] := '255,0,255';
+      Trees['measured'] := 1;
+      showmsg('Mortality tree - should be cored!');
+    end else begin
+      Trees['RGB'] := '0,255,0';
+      Trees['measured'] := 1;
+      showmsg('All in order!');
+    end;
+    
+  end;
+  
+end.

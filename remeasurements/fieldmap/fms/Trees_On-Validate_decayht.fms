@@ -1,0 +1,11 @@
+begin
+  
+  if (Trees['decayht'] <> NULL) and (Trees_old['decayht_old'] <> NULL) then begin
+  
+    if Trees['decayht'] > Trees_old['decayht_old'] then begin
+      showwarning('Decay height is higher than the previous census. Please double-check.');
+    end;
+    
+  end;
+
+end.

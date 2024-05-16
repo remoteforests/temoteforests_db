@@ -1,0 +1,11 @@
+begin
+
+  if (Trees['Species'] <> NULL) and (Trees_old['species_old'] <> NULL) then begin
+  
+    if not(Trees['Species'] = Trees_old['species_old']) then begin
+      showwarning('Tree species differs from the previous census. Please double-check.');
+    end;
+    
+  end;
+  
+end.
