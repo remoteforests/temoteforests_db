@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FIELDMAP>
+  <DATADIR PATH="?"/>
+
+  <NEWPLOTS FILE="data_import.xlsx\plot$" SHAPE="CIRCLE" RADIUS="radius_m" ID="id" XORIGIN="CONST 0" YORIGIN="CONST 0">
+    <ATTRIB NAME="Name" SOURCEATTRIB="plotid"/>
+    <ATTRIB NAME="slope" SOURCEATTRIB="slope"/>
+    <ATTRIB NAME="aspect" SOURCEATTRIB="aspect"/>
+    <ATTRIB NAME="landform" SOURCEATTRIB="landform"/>
+    <ATTRIB NAME="hillform" SOURCEATTRIB="hillform"/>
+  </NEWPLOTS>
+
+  <LAYER NAME="Trees" FILE="data_import.xlsx\tree$" PLOTID="plot_id" ID="treen" X="x_m" Y="y_m">
+    <ATTRIB NAME="Z_m" SOURCEATTRIB="CONST 0"/>
+    <ATTRIB NAME="Species" SOURCEATTRIB="species"/>
+    <ATTRIB NAME="status" SOURCEATTRIB="status"/>
+  </LAYER>
+
+  <LAYER NAME="Trees_old" FILE="data_import.xlsx\tree$" PLOTID="plot_id" ID="treen">
+    <ATTRIB NAME="XTrees" SOURCEATTRIB="x_m"/>
+    <ATTRIB NAME="YTrees" SOURCEATTRIB="y_m"/>
+    <ATTRIB NAME="IDTrees" SOURCEATTRIB="treen"/>
+    <ATTRIB NAME="species_old" SOURCEATTRIB="species"/>
+    <ATTRIB NAME="dbh_old" SOURCEATTRIB="dbh_mm"/>
+    <ATTRIB NAME="status_old" SOURCEATTRIB="status"/>
+    <ATTRIB NAME="growth_old" SOURCEATTRIB="growth"/>
+    <ATTRIB NAME="layer_old" SOURCEATTRIB="layer"/>
+    <ATTRIB NAME="decay_old" SOURCEATTRIB="decay"/>
+    <ATTRIB NAME="decay_wood_old" SOURCEATTRIB="decay_wood"/>
+    <ATTRIB NAME="decayht_old" SOURCEATTRIB="decayht"/>
+  </LAYER>
+
+  <LAYER NAME="RegRefPoints" FILE="data_import.xlsx\regRefPoints$" PLOTID="plot_id" ID="subplot_n" X="x_m" Y="y_m">
+    <ATTRIB NAME="Z_m" SOURCEATTRIB="CONST 0"/>
+  </LAYER>
+
+</FIELDMAP>

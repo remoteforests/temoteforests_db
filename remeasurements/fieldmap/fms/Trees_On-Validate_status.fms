@@ -1,0 +1,27 @@
+begin
+
+  if (Trees['status'] <> NULL) and (Trees_old['status_old'] <> NULL) then begin
+  
+    if (Trees['status'] in [1, 2, 3, 4]) and not(Trees_old['status_old'] in [1, 2, 3, 4]) then begin
+      showwarning('Tree was dead in the previous census. Please double-check.');
+    end;
+    
+    if not(Trees['status'] in [0, 1, 2, 3, 4, 10]) and (Trees_old['status_old'] in [0, 10]) then begin
+      showwarning('Tree was stump in the previous census. Please double-check.');
+    end;
+    
+    if not(Trees['status'] in [0, 4, 10, 14, 16]) and (Trees_old['status_old'] in [4, 14, 16]) then begin
+      showwarning('Tree was uprooted in the previous census. Please double-check.');
+    end;
+    
+    if not(Trees['status'] in [0, 3, 4, 10, 13, 14, 16, 23]) and (Trees_old['status_old'] in [3, 13, 23]) then begin
+      showwarning('Tree was broken in the previous census. Please double-check.');
+    end;
+    
+    if not(Trees['status'] in [0, 2, 3, 4, 10, 12, 13, 14, 16, 17, 22, 23]) and (Trees_old['status_old'] in [2, 12, 17, 22]) then begin
+      showwarning('Tree was damaged in the previous census. Please double-check.');
+    end;
+    
+  end;
+
+end.
