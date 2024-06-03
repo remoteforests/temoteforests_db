@@ -1,4 +1,4 @@
-# setup -------------------------------------------------------------------
+# 0. setup ----------------------------------------------------------------
 
 # R 4.2.3 (2023-03-15) "Shortstop Beagle"
 
@@ -6,245 +6,185 @@ library(openxlsx) # 4.2.5.2
 library(pool) # 1.0.3
 library(RPostgreSQL) # 0.7-6 (DBI 1.2.2)
 library(tidyverse) # 2.0.0 (dplyr 1.1.4, forcats 1.0.0, ggplot2 3.5.0, lubridate 1.9.3, purr 1.0.2, readr 2.1.5, stringr 1.5.1, tibble 3.2.1, tidyr 1.3.1)
-# library(zoo) # 1.8-12
+library(sf) # 1.0-15 (GEOS 3.9.3, GDAL 3.5.2, PROJ 8.2.1)
 
 source("pw.R")
 
 source("data/upload/data_upload_fc.R")
 
-data.list <- list()
+# 1. STRUCTURAL DATA ------------------------------------------------------
 
-# STRUCTURAL DATA ---------------------------------------------------------
+path <- "C:/Users/Ondrej_Vostarek/Desktop/KEL/db/data/fieldwork/2023/clean"
 
-setwd("C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/clean")
+# 1. 1. plot --------------------------------------------------------------
 
-# 1. reading --------------------------------------------------------------
+data.read <- read_data(path, "plot")
 
-data.list$plot <- read_data("plot")
-data.list$tree <- read_data("tree")
-data.list$mortality <- read_data("mortality")
-data.list$microsites <- read_data("microsites")
-data.list$tree_quality <- read_data("tree_quality")
-data.list$deadwood <- read_data("deadwood")
-data.list$regeneration <- read_data("regeneration")
-data.list$regeneration_subplot <- read_data("regeneration_subplot")
-data.list$reg_subplot_position <- read_data("reg_subplot_position")
-data.list$soil_profile <- read_data("soil")
-data.list$vegetation <- read_data("vegetation")
-data.list$habitat_signs <- read_data("habitat")
+data.prepared <- prepare_data(data.read)
 
-# 2. preparing & uploading ------------------------------------------------
+upload_data(data.prepared)
 
-## plot
+# 1. 2. plot_id -----------------------------------------------------------
 
-data.list$plot <- prepare_data("plot")
+name <- c(
+  "tree",
+  "deadwood",
+  "regeneration",
+  "regeneration_subplot",
+  "reg_subplot_position",
+  "soil_profile",
+  "vegetation",
+  "habitat_signs"
+)
 
-upload_data("plot")
+data.read <- read_data(path, name)
 
-## plot_id
+data.prepared <- prepare_data(data.read)
 
-data.list$tree <- prepare_data("tree")
-data.list$deadwood <- prepare_data("deadwood")
-data.list$regeneration <- prepare_data("regeneration")
-data.list$regeneration_subplot <- prepare_data("regeneration_subplot")
-data.list$reg_subplot_position <- prepare_data("reg_subplot_position")
-data.list$soil_profile <- prepare_data("soil_profile")
-data.list$vegetation <- prepare_data("vegetation")
-data.list$habitat_signs <- prepare_data("habitat_signs")
+upload_data(data.prepared)
 
-upload_data(x = c("tree", "deadwood", "regeneration", "regeneration_subplot", "reg_subplot_position", "soil_profile", "vegetation", "habitat_signs"))
+# 1. 3. tree_id -----------------------------------------------------------
 
-## tree_id
+name <- c(
+  "mortality",
+  "microsites",
+  "tree_quality"
+)
 
-data.list$mortality <- prepare_data("mortality")
-data.list$microsites <- prepare_data("microsites")
-data.list$tree_quality <- prepare_data("tree_quality")
+data.read <- read_data(path, name)
 
-upload_data(x = c("mortality", "microsites", "tree_quality"))
+data.prepared <- prepare_data(data.read)
 
-# DENDROCHRONOLOGICAL DATA ------------------------------------------------
+upload_data(data.prepared)
 
-setwd("C:/Users/Ondrej_Vostarek/Downloads")
+# 2. DENDROCHRONOLOGICAL DATA ---------------------------------------------
 
-# 1. reading --------------------------------------------------------------
+path <- "C:/Users/Ondrej_Vostarek/Desktop/KEL/db/data/dendrolab/new/clean"
 
-data.list$core <- read_data("core")
-data.list$ring <- read_data("ring")
+# 2. 1. core --------------------------------------------------------------
 
-# 2. preparing & uploading ------------------------------------------------
+data.read <- read_data(path, "core")
 
-## tree_id
+data.prepared <- prepare_data(data.read)
 
-data.list$core <- prepare_data("core")
+upload_data(data.prepared)
 
-upload_data("core")
+# 2. 2. ring --------------------------------------------------------------
 
-## core_id
+data.read <- read_data(path, "ring")
 
-data.list$ring <- prepare_data("ring")
+data.prepared <- prepare_data(data.read)
 
-upload_data("ring")
+upload_data(data.prepared)
 
-# DISTURBANCE DATA --------------------------------------------------------
+# 3. DISTURBANCE DATA -----------------------------------------------------
 
-# 1. reading --------------------------------------------------------------
+# 3. 1. dist_tree ---------------------------------------------------------
 
-data.list$dist_tree <- data.event
-data.list$dist_plot <- data.kde.all %>% distinct(., plotid, type, year_min, year_max, ncores)
-data.list$dist_chrono <- data.kde.all %>% select(plotid, type, year, ca_pct, kde)
-data.list$dist_event <- data.peaks.all %>% select(plotid, type, year)
-data.list$dist_stand <- dist.stand
+data.read <- list(dist_tree = data.event)
 
-# 2. preparing & uploading ------------------------------------------------
+data.prepared <- prepare_data(data.read)
 
-## dist_tree
+upload_data(data.prepared)
 
-data.list$dist_tree <- prepare_data("dist_tree")
+# 3. 2. dist_plot ---------------------------------------------------------
 
-upload_data("dist_tree")
+data.read <- list(dist_plot = data.kde.all %>% distinct(., plotid, type, year_min, year_max, ncores))
 
-## dist_plot
+data.prepared <- prepare_data(data.read)
 
-data.list$dist_plot <- prepare_data("dist_plot")
+upload_data(data.prepared)
 
-upload_data("dist_plot")
+# 3. 3. dist_chrono -------------------------------------------------------
 
-## dist_chrono
+data.read <- list(dist_chrono = data.kde.all %>% select(plotid, type, year, ca_pct, kde))
 
-data.list$dist_chrono <- prepare_data("dist_chrono")
+data.prepared <- prepare_data(data.read)
 
-upload_data("dist_chrono")
+upload_data(data.prepared)
 
-## dist_event
+# 3. 4. dist_event --------------------------------------------------------
 
-data.list$dist_event <- prepare_data("dist_event")
+data.read <- list(dist_event = data.peaks.all %>% select(plotid, type, year))
 
-upload_data("dist_event")
+data.prepared <- prepare_data(data.read)
 
-## dist_stand
+upload_data(data.prepared)
 
-data.list$dist_stand <- prepare_data("dist_stand")
+# 3. 5. dist_polygons -----------------------------------------------------
 
-upload_data("dist_stand")
+path <- "C:/Users/Ondrej_Vostarek/Desktop/KEL/db/data/polygons/dist/new/stands/tp/laea"
 
-# PARAMETERS --------------------------------------------------------------
-
-# 1. reading --------------------------------------------------------------
-
-data.list$parameters_plot <- data.col
-
-# 2. preparing & uploading ------------------------------------------------
-
-data.list$parameters_plot <- prepare_data("parameters_plot")
-
-upload_data("parameters_plot")
-
-# WINSCANOPY --------------------------------------------------------------
-
-setwd("C:/Users/Ondrej_Vostarek/Downloads")
-
-# 1. reading --------------------------------------------------------------
-
-# ## raw data
-# 
-# canopy.list <- list.files(pattern = "*raw.txt", recursive = F)
-# 
-# for (i in canopy.list) {
-# 
-#   can.data <- read_delim(i, delim = "\t", skip = 6, col_names = F)
-# 
-#   can.names <- read_delim(i, delim = "\t", skip = 1, n_max = 1, col_names = F) %>%
-#     select(1:ncol(can.data))
-# 
-#   colnames(can.data) <- can.names[1,]
-# 
-#   write.xlsx(x = can.data, file = paste0(substr(i, 1, nchar(i) - 7), "clean.xlsx"), row.names = F)
-#
-# }
-# 
-# ### The structure of the raw data needs to be checked and adjusted manually.
-
-canopy.list <- list.files(pattern = "*clean.xlsx", recursive = F)
-
-canopy.df <- tibble()
-
-for (i in canopy.list) {
+for (i in list.files(path, pattern = ".shp$", full.names = T)){
   
-  can.new <- read.xlsx(i, sheet = 2)
+  df <- st_read(dsn = i)[, c("plotid", "stand_new", "geometry")] 
   
-  canopy.df <- bind_rows(canopy.df, can.new)
+  names(df) <- c("plotid", "stand", "geometry")
+  
+  dbWriteTable(conn = KELadmin, 
+               name = "dist_polygons",
+               value = df,
+               row.names = F,
+               overwrite = F, 
+               append = T,
+               binary = F)
   
 }
 
-data.list$canopy_analysis <- canopy.df %>%
-  gather(., parameter, value, 3:15) %>%
-  mutate(plotid = substr(file, 1, nchar(file) - 6),
-         transect = substr(file, nchar(file) - 4, nchar(file) - 4),
-    date = substr(date, 1, 4),
-    date = as.numeric(date))
-    
-# 2. preparing & uploading ------------------------------------------------
+# 3. 6. dist_stand --------------------------------------------------------
 
-data.list$canopy_analysis <- prepare_data("canopy_analysis")
+data.read <- list(dist_stand = dist.stand)
 
-upload_data("canopy_analysis")
+data.prepared <- prepare_data(data.read)
 
-# DEADWOOD POSITIONS ------------------------------------------------------
+upload_data(data.prepared)
 
-setwd("C:/Users/Ondrej_Vostarek/Downloads")
+# 4. PARAMETERS -----------------------------------------------------------
 
-# 1. reading --------------------------------------------------------------
+data.read <- list(parameters_plot = data.col)
 
-### Sheet name, date and plot codes need to be adjusted; column names, species and decay codes checked. 
+data.prepared <- prepare_data(data.read)
 
-data.list$deadwood_tree <- read.xlsx(".xlsx", sheet = "") %>%
-  select(plotid = , object_id = , species = , decay = , length_m = , volume_m3 = ) %>%
-  mutate(date = ,
-  plotid = case_when(
-    plotid  %in%  ~ "",
-    plotid  %in%  ~ ""),
-  species = case_when(
-    species %in% 100 ~ "99",
-    species %in% 200 ~ "Picea abies",
-    species %in% 300 ~ "Fagus sylvatica",
-    species %in% 400 ~ "Abies alba",
-    species %in% 500 ~ "Acer pseudoplatanus",
-    species %in% 600 ~ "Acer platanoides",
-    species %in% 700 ~ "Fraxinus excelsior",
-    species %in% 800 ~ "Sorbus aucuparia",
-    species %in% 900 ~ "Ulmus",
-    .default = "99"),
-  decay = case_when(
-    decay %in% 100 ~ 1,
-    decay %in% 200 ~ 2,
-    decay %in% 300 ~ 3,
-    decay %in% 400 ~ 4,
-    decay %in% 500 ~ 5,
-    .default = 99),
-  length_m = round(length_m, 2),
-  volume_m3 = round(volume_m3, 5)) %>%
-  filter(!plotid %in% NA)
+upload_data(data.prepared)
 
-data.list$deadwood_position <- read.xlsx(".xlsx", sheet = "") %>%
-  select(plotid = , object_id = , end_number = , diameter_mm = , x_m = , y_m = , z_m = ) %>%
-  mutate(date = ,
-    plotid = case_when(
-      plotid  %in%  ~ "",
-      plotid  %in%  ~ "")) %>% 
-  filter(!plotid %in% NA) %>%
-  distinct(., .keep_all = T)
+# 5. WINSCANOPY -----------------------------------------------------------
 
-# 2. preparing & uploading ------------------------------------------------
+path <- ""
 
-data.list$deadwood_tree <- prepare_data("deadwood_tree")
-data.list$deadwood_position <- prepare_data("deadwood_position")
+# 5. 1. clean -------------------------------------------------------------
 
-data.list$deadwood_tree <- data.list$deadwood_tree %>% select(colorder("deadwood_tree"))
+## Structure of exported data needs to be checked and adjusted manually.
 
-upload_data(x = c("deadwood_tree", "deadwood_position"))
+# for (i in list.files(path, pattern = "*_raw.txt", full.names = T)){
+# 
+#   df <- read_delim(i, delim = "\t", skip = 6, col_names = F)
+# 
+#   col.names <- read_delim(i, delim = "\t", skip = 1, n_max = 1, col_names = F) %>% select(1:ncol(df))
+# 
+#   colnames(df) <- col.names[1, ]
+# 
+#   write.xlsx(x = df, file = paste0(substr(i, 1, nchar(i) - 7), "clean.xlsx"))
+#
+# }
 
-# disconnection -----------------------------------------------------------
+# 5. 2. upload ------------------------------------------------------------
 
-poolClose(KELuser)
-poolClose(KELadmin)
+data.read <- read_data(path, "canopy_analysis")
 
+data.prepared <- prepare_data(data.read)
+
+upload_data(data.prepared)
+
+# 6. EOBS -----------------------------------------------------------------
+
+load("C:/Users/Ondrej_Vostarek/Desktop/KEL/db/data/external/eobs/EOBS_data.RData")
+
+data.read <- list(climate = plot_clim)
+
+data.prepared <- prepare_data(data.read)
+  
+upload_data(data.prepared)  
+
+# ! close database connection ---------------------------------------------
+
+poolClose(KELadmin);poolClose(KELuser)
