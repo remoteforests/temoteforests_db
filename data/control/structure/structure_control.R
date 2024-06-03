@@ -238,7 +238,7 @@ for (i in names(data.clean)){
   
   name <- paste(unique(data.clean$plot$date), i, sep = "_")
   
-  write.table(data.clean[i], paste0(path, name, ".csv"), sep = ",", row.names = F, na = "")
+  write.table(data.clean[[i]], paste0(path, name, ".csv"), sep = ",", row.names = F, na = "")
   
 }
 
