@@ -128,6 +128,7 @@ for(PL in unique(data.form$plotid)){
               select(-plotid) %>% 
               arrange(treen) %>% 
               rbind(header, .))
+
 }
 
 saveWorkbook(wb, paste(year, area, "forms.xlsx", sep = "_"))

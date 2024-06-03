@@ -5,10 +5,11 @@ paramsGetData <- function(plot.id, params){
   
   data.list <- list()
   
-  for (i in params) {
+  for (i in params){
     
-    if(!i %in% c("plot","tree","core","disturbance","deadwood","deadwood_tree","regeneration","regeneration_subplot",
-                 "canopy","mortality","temperature")) stop(paste("Unknown params:", i, sep = " "))
+    if(!i %in% c("plot","tree","core","disturbance","deadwood","deadwood_tree",
+                 "regeneration","regeneration_subplot", "canopy","mortality",
+                 "temperature")) stop(paste("Unknown params:", i, sep = " "))
 
     # plot --------------------------------------------------------------------
 
@@ -203,7 +204,6 @@ paramsGetData <- function(plot.id, params){
         select(plot_id = id, longitude = lng, latitude = lat, altitude = altitude_m) %>%
         collect()
     }
-    
   }
   
   return(data.list) 
@@ -238,10 +238,11 @@ paramsCalculate <- function(data, params){
   
   data.params <- list()
   
-  for (i in params) {
+  for (i in params){
     
-    if(!i %in% c("plot","tree","core","disturbance","deadwood","deadwood_tree","regeneration","regeneration_subplot",
-                 "canopy","mortality","temperature")) stop(paste("Unknown params:", i, sep = " "))
+    if(!i %in% c("plot","tree","core","disturbance","deadwood","deadwood_tree",
+                 "regeneration","regeneration_subplot", "canopy","mortality",
+                 "temperature")) stop(paste("Unknown params:", i, sep = " "))
     
     # plot --------------------------------------------------------------------
 
@@ -277,7 +278,7 @@ paramsCalculate <- function(data, params){
     
     # tree --------------------------------------------------------------------
 
-    if(i == "tree") {
+    if(i == "tree"){
         
       data.params$tree_params <- data$tree %>%
         filter(dbh_mm >= dbh_min) %>%
@@ -772,7 +773,6 @@ paramsCalculate <- function(data, params){
               filter(!is.na(mortality) & plot_id %in% plot.id) %>%
               select(plot_id, mortality)
           )
-                                
         })
     }
     
@@ -792,7 +792,6 @@ paramsCalculate <- function(data, params){
         select(plot_id, temp_mean_year = temperature_annual, temp_mean_vegetseason = temperature_vegetation) %>%
         mutate_at(vars(-plot_id), list(~ round(., 0)))
     }
-                            
   }
   
   return(data.params)
