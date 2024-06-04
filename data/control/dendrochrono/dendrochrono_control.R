@@ -2,6 +2,8 @@
 
 # R 4.2.3 (2023-03-15) "Shortstop Beagle"
 
+library(dplR) # 1.7.6
+library(openxlsx) # 4.2.5.2
 library(pool) # 1.0.3
 library(RPostgreSQL) # 0.7-6 (DBI 1.2.2)
 library(tidyverse) # 2.0.0 (dplyr 1.1.4, forcats 1.0.0, ggplot2 3.5.0, lubridate 1.9.3, purr 1.0.2, readr 2.1.5, stringr 1.5.1, tibble 3.2.1, tidyr 1.3.1)
@@ -14,68 +16,99 @@ fk <- dbGetQuery(KELuser, "SELECT tablename FROM pg_tables WHERE schemaname = 'p
 
 fk.list <- list()
 
-for (i in fk$tablename) {
+for (i in fk$tablename){
   
   fk.list[i] <- tbl(KELuser, paste(i)) %>% collect()
   
 }
 
+path <- "C:/Users/Ondrej_Vostarek/Desktop/KEL/db/data/dendrolab/new/raw"
+
+sampling.date <- 2021
+country <- "ROM"
+coretype <- 2 # 1 = "regular", 2 = "mortality"
+
 # 1. DENDROCHRONOLOGICAL DATA ---------------------------------------------
 
-setwd("C:/Users/Ondrej_Vostarek/Downloads")
-
-# 1. 1. reading -----------------------------------------------------------
-
-st <- unique(gsub("^(.*)[:.:](.*)[:.:](.*)$", "\\2", list.files(pattern = '.csv')))
+# 1. 1. read --------------------------------------------------------------
 
 data.raw <- list()
 
-for (i in st) {
+# 1. 1. 1. core -----------------------------------------------------------
+
+xl <- list.files(path, pattern = ".xlsx", full.names = T)
+
+for (i in xl){
   
-  data.new <- read_dendro_data(i)
+  core <- read_core_data(i)
   
-  data.raw$core <- bind_rows(data.raw$core, data.new$core)
-  data.raw$ring <- bind_rows(data.raw$ring, data.new$ring)
+  data.raw$core <- bind_rows(data.raw$core, core)
+  
+  remove(core)
   
 }
 
-tree.db <- tbl(KELuser, "tree") %>% 
-  inner_join(.,
-             tbl(KELuser, "plot") %>% 
-               filter(standshort %in% st) %>% 
-               select(date, plot_id = id),
-             by = "plot_id") %>%
+# 1. 1. 2. ring -----------------------------------------------------------
+
+fh <- list.files(path, pattern = ".fh", full.names = T)
+
+for (i in fh){
+  
+  ring <- read_ring_data(i)
+  
+  data.raw$ring <- bind_rows(data.raw$ring, ring)
+  
+  remove(ring)
+  
+}
+
+# 1. 1. 3. database -------------------------------------------------------
+
+tree.db <- tbl(KELuser, "tree") %>%
+  filter(treeid %in% local(unique(data.raw$core$treeid))) %>%
+  inner_join(., tbl(KELuser, "plot") %>%
+               filter(date %in% sampling.date),
+             by = c("plot_id" = "id")) %>%
+  select(date, treeid, species) %>%
   collect()
+  
+# 1. 2. check -------------------------------------------------------------
 
-# 1. 2. cleaning ----------------------------------------------------------
+error.list <- check_dendrochronological_data(data = data.raw, fk = fk.list)
 
-## check data
+## additional chronology check
 
-error.list <- check_dendro_data(data = data.raw, fk = fk.list)
+data.raw$core %>%
+  distinct(., treeid) %>%
+  slice_sample(., n = 9, replace = FALSE) %>%
+  inner_join(., data.raw$ring, by = "treeid") %>%
+  ggplot() +
+  geom_line(aes(x = year, y = incr_mm)) +
+  facet_wrap(~treeid) 
 
-## correct data
+# 1. 3. clean -------------------------------------------------------------
 
-data.clean <- list()
+data.clean <- clean_dendrochronological_data(data = data.raw, coretype)
 
-data.clean$core <- data.raw$core %>% distinct(., .keep_all = T) %>% mutate(coretype = 1) # 2 - mortality cores
-data.clean$ring <- data.raw$ring %>% distinct(., .keep_all = T)
+# 1. 4. export ------------------------------------------------------------
 
-# 1. 3. exporting ---------------------------------------------------------
+path <- "C:/Users/Ondrej_Vostarek/Desktop/KEL/db/data/dendrolab/new/clean/"
 
-name <- paste(unique(data.clean$core$date), substr(first(data.clean$core$treeid), 1, 3), st, sep = "_")
-
-write.table(data.clean$core, paste(name, "core.csv", sep = "_"), sep = ",", row.names = F, na = "")
-write.table(data.clean$ring, paste(name, "ring.csv", sep = "_"), sep = ",", row.names = F, na = "")
-
-# 1. 4. change species ----------------------------------------------------
-
-change.df <- read.table("change_species.csv", sep = ",", header = T, stringsAsFactors = F) %>% 
-  select(treeid, species) %>% 
-  inner_join(., 
-             tree.db %>% select(id, treeid), 
-             by = "treeid")
-
-change.df %>% dbWriteTable(KELadmin, c('public','change'), value = ., row.names = FALSE, overwrite = TRUE)
+for (i in names(data.clean)){
+  
+  if(coretype %in% 2){
+    
+    name <- paste(sampling.date, country, "mortality", i, "clean", sep = "_")
+    
+  } else {
+    
+    name <- paste(sampling.date, country, i, "clean", sep = "_")
+  
+    }
+  
+  write.table(data.clean[[i]], paste0(path, name, ".csv"), sep = ",", row.names = F, na = "")
+  
+}
 
 # ! close database connection ---------------------------------------------
 

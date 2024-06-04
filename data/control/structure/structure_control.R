@@ -15,7 +15,7 @@ fk <- dbGetQuery(KELuser, "SELECT tablename FROM pg_tables WHERE schemaname = 'p
 
 fk.list <- list()
 
-for (i in fk$tablename) {
+for (i in fk$tablename){
   
   fk.list[i] <- tbl(KELuser, paste(i)) %>% collect()
   
@@ -38,7 +38,7 @@ path <- "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/fieldmap/new"
 
 fm <- list.files(path, pattern = ".xlsx", full.names = T)
 
-for (i in fm) {
+for (i in fm){
   
   data <- read_fm_data(i)
   
@@ -61,7 +61,7 @@ path <- "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/raw"
 
 fr <- list.files(path, pattern = ".xlsx", full.names = T)
 
-for (i in fr) {
+for (i in fr){
   
   data <- read_fr_data(i)
   
@@ -179,7 +179,7 @@ error <- data.raw$regref %>% filter(!subplot_n %in% c(0:5)) %>% distinct(plotid)
 
 pdf("data/control/structure/subplotPosCheck.pdf", width = 9.2, height = 8, pointsize = 12, onefile = T)
 
-for (e in error) {
+for (e in error){
   
   print(
     ggplot(data.raw$regref %>% filter(plotid %in% e)) +
@@ -188,7 +188,7 @@ for (e in error) {
       geom_text(aes(x_m + 0.5, y_m + 0.5, label = subplot_n), size = 3, color = "grey20") +
       ggtitle(e)
   )
-  
+
 }
 
 dev.off()
@@ -197,7 +197,7 @@ dev.off()
 
 pdf("data/control/structure/subplotPosCheck.pdf", width = 9.2, height = 8, pointsize = 12, onefile = T)
 
-for (PL in unique(data.raw$regref$plotid)) {
+for (PL in unique(data.raw$regref$plotid)){
   
   print(
     ggplot(data.raw$regref %>% filter(plotid %in% PL & subplot_n %in% c(0:5))) +
@@ -234,11 +234,11 @@ data.clean <- clean_structural_data(data = data.raw)
 
 path <- "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/clean/"
 
-for (i in names(data.clean)) {
+for (i in names(data.clean)){
   
   name <- paste(unique(data.clean$plot$date), i, sep = "_")
   
-  write.table(data.clean[i], paste0(path, name, ".csv"), sep = ",", row.names = F, na = "")
+  write.table(data.clean[[i]], paste0(path, name, ".csv"), sep = ",", row.names = F, na = "")
   
 }
 

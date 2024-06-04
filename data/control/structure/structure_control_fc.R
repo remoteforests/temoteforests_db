@@ -233,7 +233,7 @@ read_fr_data <- function(file){
   return(data.list)
 }
 
-check_structural_data <- function(data, fk) {
+check_structural_data <- function(data, fk){
   #' @description check structural data for possible errors
   #' @param data list of structural datasets (data.raw)
   #' @param fk list of fk encodings extracted from database
