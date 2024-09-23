@@ -115,10 +115,10 @@ paramsGetData <- function(plot.id, params){
         summarise(diam_mean = mean(diameter_mm)) %>%
         right_join(., tbl(KELuser, "deadwood_tree") %>%
                      filter(plot_id %in% plot.id,
-                            volume_m3 > 0), 
+                            volume_plot_m3 > 0), 
                    by = c("deadwood_id" = "id")) %>%
         inner_join(., tbl(KELuser, "plot") %>% filter(!is.na(plotsize)), by = c("plot_id" = "id")) %>%
-        select(plot_id, plotsize, species, decay, volume_m3, diam_mean) %>%
+        select(plot_id, plotsize, species, decay, volume_plot_m3, diam_mean) %>%
         collect()
       
       data.list$wood_density <- tbl(KELuser, "wood_density") %>% select(-id) %>% collect()
@@ -598,20 +598,20 @@ paramsCalculate <- function(data, params){
       data.params$volume_dead_tree_lying_decay <- data$deadwood_tree %>%
         filter(!decay %in% 99) %>%
         group_by(plot_id, decay) %>%
-        summarise(volume_cwd = round(sum(volume_m3) * 10000 / first(plotsize), 0)) %>%
+        summarise(volume_cwd = round(sum(volume_plot_m3) * 10000 / first(plotsize), 0)) %>%
         ungroup() %>%
         mutate(decay = paste0("volume_dead_tree_lying_decay", decay)) %>%
         spread(., decay, volume_cwd, fill = 0)
               
       data.params$volume_dead_tree_lying <- data$deadwood_tree %>%
         group_by(plot_id) %>%
-        summarise(volume_dead_tree_lying = round(sum(volume_m3) * 10000 / first(plotsize), 0))
+        summarise(volume_dead_tree_lying = round(sum(volume_plot_m3) * 10000 / first(plotsize), 0))
               
       data.params$biomass_dead_tree_lying <- data$deadwood_tree %>%
         filter(!decay %in% 99,
                !species %in% "99") %>%
         left_join(., data$wood_density, by = c("species", "decay" = "decay_class")) %>%
-        mutate(biomass = volume_m3 * (density_gCm3 * relative_density * 1000)) %>%
+        mutate(biomass = volume_plot_m3 * (density_gCm3 * relative_density * 1000)) %>%
         group_by(plot_id) %>%
         summarise(biomass_dead_tree_lying = round(sum(biomass) * 10000 / first(plotsize), 0))
               
