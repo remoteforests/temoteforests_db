@@ -3,8 +3,8 @@
 # R 4.2.3 (2023-03-15) "Shortstop Beagle"
 
 library(pool) # 1.0.3
-library(RPostgreSQL) # 0.7-6 (DBI 1.2.2)
-library(tidyverse) # 2.0.0 (dplyr 1.1.4, forcats 1.0.0, ggplot2 3.5.0, lubridate 1.9.3, purr 1.0.2, readr 2.1.5, stringr 1.5.1, tibble 3.2.1, tidyr 1.3.1)
+library(RPostgreSQL) # 0.7-6 (DBI 1.2.3)
+library(tidyverse) # 2.0.0 (dplyr 1.1.4, forcats 1.0.0, ggplot2 3.5.1, lubridate 1.9.3, purr 1.0.2, readr 2.1.5, stringr 1.5.1, tibble 3.2.1, tidyr 1.3.1)
 
 source("pw.R")
 
