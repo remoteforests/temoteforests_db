@@ -7,6 +7,7 @@ library(pool) # 1.0.3
 library(RPostgreSQL) # 0.7-6 (DBI 1.2.3)
 library(tidyverse) # 2.0.0 (dplyr 1.1.4, forcats 1.0.0, ggplot2 3.5.1, lubridate 1.9.3, purr 1.0.2, readr 2.1.5, stringr 1.5.1, tibble 3.2.1, tidyr 1.3.1)
 library(sf) # 1.0-15 (GEOS 3.9.3, GDAL 3.5.2, PROJ 8.2.1)
+library(nngeo) # 0.4.8
 
 source("pw.R")
 
@@ -184,6 +185,75 @@ data.read <- list(climate = plot_clim)
 data.prepared <- prepare_data(data.read)
   
 upload_data(data.prepared)  
+
+# 7. STAND POLYGONS -------------------------------------------------------
+
+data <- tbl(KELuser, "plot") %>%
+  filter(ownership %in% 1,
+         !is.na(lng), 
+         !is.na(lat),
+         plottype %in% c(2,3,4,8)) %>%
+  distinct(., stand, foresttype, plotid, lng, lat) %>%
+  collect() %>%
+  arrange(stand, foresttype) %>%
+  mutate(radius_m = round(sqrt(100000/pi), 2)) %>%
+  st_as_sf(., coords = c("lng", "lat")) %>%
+  st_set_crs(., "EPSG:4326") %>%
+  st_transform(., "EPSG:3035")
+
+polygons <- data.frame()
+
+for (s in unique(data$stand)) {
+  
+  a <- data %>%
+    filter(stand %in% s) %>%
+    st_buffer(., dist = .$radius_m) %>%
+    group_by(stand, foresttype) %>%
+    summarise() %>%
+    ungroup() %>%
+    st_remove_holes() %>%
+    st_simplify(., preserveTopology = T, dTolerance = 100)
+  
+  if (length(unique(a$foresttype)) > 1) {
+    
+    b <- data %>% 
+      filter(stand %in% s) %>%
+      st_union() %>%
+      st_voronoi() %>%
+      st_cast() %>%
+      st_intersection(., a) %>%
+      st_sf() %>%
+      st_join(., data %>% filter(stand %in% s)) %>%
+      filter(!is.na(foresttype)) %>%
+      group_by(stand, foresttype) %>%
+      summarise() %>%
+      ungroup()
+    
+    polygons <- rbind(polygons, b)
+    
+    remove(b)
+    
+  } else {
+    
+    polygons <- rbind(polygons, a)
+  }
+  
+  print(s)
+  
+  remove(s, a)
+}
+
+polygons <- polygons %>% 
+  mutate(id = row_number()) %>% 
+  select(colorder("stand_polygons"))
+
+dbWriteTable(conn = KELadmin, 
+             name = "stand_polygons",
+             value = polygons,
+             row.names = F,
+             overwrite = F, 
+             append = T,
+             binary = F)
 
 # ! close database connection ---------------------------------------------
 

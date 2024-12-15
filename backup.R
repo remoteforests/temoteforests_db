@@ -9,7 +9,7 @@ library(RPostgreSQL) # 0.7-6 (DBI 1.2.3)
 
 source("pw.R")
 
-path <- "C:/Users/Ondrej_Vostarek/Desktop/KEL/db/backup/"
+path <- "C:/Users/vosta/Desktop/KEL/db/backup/"
 
 date <- gsub(pattern = "-", replacement = "", x = Sys.Date())
 
@@ -18,7 +18,7 @@ if(!dir.exists(paste0(path, date))){dir.create(paste0(path, date))}
 # 1. DATABASE BACKUP ------------------------------------------------------
 
 tables <- c(
-  "plot","parameters_plot", "spatial_hierarchy",
+  "plot","parameters_plot", "spatial_hierarchy", "stand_polygons",
   "tree","species_fk","wood_density","biomass_eq",
   "tree_quality","mortality","microsites","lichen", 
   "core", "distance_to_pith", "ring","pointyear", 
