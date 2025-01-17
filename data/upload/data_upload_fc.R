@@ -29,7 +29,7 @@ read_data <- function(path, name){
     
     if(i == "plot"){
       
-      for(j in list.files(path, pattern = "*_plot_clean.csv", full.names = T)){
+      for(j in list.files(path, pattern = "*_plot.csv", full.names = T)){
         
         df <- bind_rows(df, read.table(j, sep = ",", header = T, stringsAsFactors = F) %>%
                           rename_col(.) %>%
@@ -39,7 +39,6 @@ read_data <- function(path, name){
                                  country = as.character(country),
                                  location = as.character(location),
                                  stand = as.character(stand),
-                                 standshort = as.character(standshort),
                                  plot = as.character(plot),
                                  subplot = as.numeric(subplot),
                                  lng = as.numeric(lng),
@@ -61,7 +60,7 @@ read_data <- function(path, name){
     
     if(i == "tree"){
         
-      for(j in list.files(path, pattern = "*_tree_clean.csv", full.names = T)){
+      for(j in list.files(path, pattern = "*_tree.csv", full.names = T)){
         
         df <- bind_rows(df, read.table(j, sep = ",", header = T, stringsAsFactors = F) %>%
                           rename_col(.) %>%
@@ -93,7 +92,7 @@ read_data <- function(path, name){
         
     if(i == "mortality"){
           
-      for(j in list.files(path, pattern = "*_mortality_clean.csv", full.names = T)){
+      for(j in list.files(path, pattern = "*_mortality.csv", full.names = T)){
         
         df <- bind_rows(df, read.table(j, sep = ",", header = T, stringsAsFactors = F) %>%
                           rename_col(.) %>%
@@ -107,7 +106,7 @@ read_data <- function(path, name){
           
     if(i == "microsites"){
             
-      for(j in list.files(path, pattern = "*_microsites_clean.csv", full.names = T)){
+      for(j in list.files(path, pattern = "*_microsites.csv", full.names = T)){
         
         df <- bind_rows(df, read.table(j, sep = ",", header = T, stringsAsFactors = F) %>%
                           rename_col(.) %>%
@@ -123,7 +122,7 @@ read_data <- function(path, name){
     
     if(i == "tree_quality"){
               
-      for(j in list.files(path, pattern = "*_tree_quality_clean.csv", full.names = T)){
+      for(j in list.files(path, pattern = "*_tree_quality.csv", full.names = T)){
         
         df <- bind_rows(df, read.table(j, sep = ",", header = T, stringsAsFactors = F) %>%
                           rename_col(.) %>%
@@ -137,7 +136,7 @@ read_data <- function(path, name){
               
     if(i == "deadwood"){
                 
-      for(j in list.files(path, pattern = "*_deadwood_clean.csv", full.names = T)){
+      for(j in list.files(path, pattern = "*_deadwood.csv", full.names = T)){
         
         df <- bind_rows(df, read.table(j, sep = ",", header = T, stringsAsFactors = F) %>%
                           rename_col(.) %>%
@@ -154,7 +153,7 @@ read_data <- function(path, name){
                 
     if(i == "regeneration"){
                   
-      for(j in list.files(path, pattern = "*_regeneration_clean.csv", full.names = T)){
+      for(j in list.files(path, pattern = "*_regeneration.csv", full.names = T)){
         
         df <- bind_rows(df, read.table(j, sep = ",", header = T, stringsAsFactors = F) %>%
                           rename_col(.) %>%
@@ -171,7 +170,7 @@ read_data <- function(path, name){
 
     if(i == "regeneration_subplot"){
                     
-      for(j in list.files(path, pattern = "*_regeneration_subplot_clean.csv", full.names = T)){
+      for(j in list.files(path, pattern = "*_regeneration_subplot.csv", full.names = T)){
         
         df <- bind_rows(df, read.table(j, sep = ",", header = T, stringsAsFactors = F) %>%
                           rename_col(.) %>%
@@ -191,7 +190,7 @@ read_data <- function(path, name){
                     
     if(i == "reg_subplot_position"){
                       
-      for(j in list.files(path, pattern = "*_regref_clean.csv", full.names = T)){
+      for(j in list.files(path, pattern = "*_regref.csv", full.names = T)){
         
         df <- bind_rows(df, read.table(j, sep = ",", header = T, stringsAsFactors = F) %>%
                           rename_col(.) %>%
@@ -207,7 +206,7 @@ read_data <- function(path, name){
                     
     if(i == "soil_profile"){
                       
-      for(j in list.files(path, pattern = "*_soil_clean.csv", full.names = T)){
+      for(j in list.files(path, pattern = "*_soil.csv", full.names = T)){
         
         df <- bind_rows(df, read.table(j, sep = ",", header = T, stringsAsFactors = F) %>%
                           rename_col(.) %>%
@@ -223,7 +222,7 @@ read_data <- function(path, name){
                     
     if(i == "vegetation"){
       
-      for(j in list.files(path, pattern = "*_vegetation_clean.csv", full.names = T)){
+      for(j in list.files(path, pattern = "*_vegetation.csv", full.names = T)){
         
         df <- bind_rows(df, read.table(j, sep = ",", header = T, stringsAsFactors = F) %>%
                           rename_col(.) %>%
@@ -251,7 +250,7 @@ read_data <- function(path, name){
                       
     if(i == "habitat_signs"){
                         
-      for(j in list.files(path, pattern = "*_habitat_clean.csv", full.names = T)){
+      for(j in list.files(path, pattern = "*_habitat.csv", full.names = T)){
         
         df <- bind_rows(df, read.table(j, sep = ",", header = T, stringsAsFactors = F) %>%
                           rename_col(.) %>%
@@ -268,7 +267,7 @@ read_data <- function(path, name){
     
     if(i == "core"){
                           
-      for(j in list.files(path, pattern = "*_core_clean.csv", full.names = T)){
+      for(j in list.files(path, pattern = "*_core.csv", full.names = T)){
         
         df <- bind_rows(df, read.table(j, sep = ",", header = T, stringsAsFactors = F) %>%
                           rename_col(.) %>%
@@ -288,7 +287,7 @@ read_data <- function(path, name){
 
     if(i == "ring"){
       
-      for(j in list.files(path, pattern = "*_ring_clean.csv", full.names = T)){
+      for(j in list.files(path, pattern = "*_ring.csv", full.names = T)){
         
         df <- bind_rows(df, read.table(j, sep = ",", header = T, stringsAsFactors = F) %>%
                           rename_col(.) %>%

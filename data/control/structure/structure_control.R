@@ -27,6 +27,8 @@ for (i in fk$tablename){
 
 data.raw <- list()
 
+path <- "data/control/inp"
+
 # 1. 1. 1. fieldmap -------------------------------------------------------
 
 ## first: check all 'Note' columns for additional information;
@@ -34,9 +36,7 @@ data.raw <- list()
 ## third: manually convert 'Date' column in 'Plots' sheet to 'Date (short)' format and check it against 'EDIT_USER' & 'EDIT_DATE' columns -> fill in if necessary;
 ## fourth: check 'Measured' column in 'Trees' sheet against 'EDIT_USER' & 'EDIT_DATE' columns -> fill in if necessary;
 
-path <- "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/fieldmap/new"
-
-fm <- list.files(path, pattern = ".xlsx", full.names = T)
+fm <- list.files(path, pattern = "_fm.xlsx", full.names = T)
 
 for (i in fm){
   
@@ -57,16 +57,14 @@ for (i in fm){
 
 # 1. 1. 2. forms ----------------------------------------------------------
 
-path <- "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/raw"
-
-fr <- list.files(path, pattern = ".xlsx", full.names = T)
+fr <- list.files(path, pattern = "_fr.xlsx", full.names = T)
 
 for (i in fr){
   
   data <- read_fr_data(i)
   
   data.raw$deadwood <- bind_rows(data.raw$deadwood, data$deadwood)
-  data.raw$regeneration <- bind_rows(data.raw$regeneration, data$regeneration)
+  # data.raw$regeneration <- bind_rows(data.raw$regeneration, data$regeneration)
   data.raw$regeneration_subplot <- bind_rows(data.raw$regeneration_subplot, data$regeneration_subplot)
   # data.raw$soil <- bind_rows(data.raw$soil, data$soil)
   # data.raw$vegetation <- bind_rows(data.raw$vegetation, data$vegetation)
@@ -79,7 +77,8 @@ for (i in fr){
 # 1. 1. 3. previous census ------------------------------------------------
 
 old.plot.id <- tbl(KELuser, "plot") %>%
-  filter(plotid %in% local(unique(data.raw$plot$plotid)) & !date %in% local(unique(data.raw$plot$date))) %>%
+  filter(plotid %in% local(unique(data.raw$plot$plotid)) & !date %in% local(unique(data.raw$plot$date)),
+         !census %in% 8) %>%
   select(plotid, date, id) %>%
   collect() %>%
   group_by(plotid) %>%
@@ -232,7 +231,7 @@ data.clean <- clean_structural_data(data = data.raw)
 
 # 1. 4. export ------------------------------------------------------------
 
-path <- "C:/Users/Ondrej_Vostarek/Desktop/MVP/DB/data/2023/clean/"
+path <- "data/control/out/"
 
 for (i in names(data.clean)){
   

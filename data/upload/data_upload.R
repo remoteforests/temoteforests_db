@@ -15,7 +15,7 @@ source("data/upload/data_upload_fc.R")
 
 # 1. STRUCTURAL DATA ------------------------------------------------------
 
-path <- "C:/Users/Ondrej_Vostarek/Desktop/KEL/db/data/fieldwork/2023/clean"
+path <- "data/control/out"
 
 # 1. 1. plot --------------------------------------------------------------
 
